@@ -5,7 +5,7 @@
 -- This migration creates the initial database structure
 -- Run this file to set up the database from scratch
 
-\i schema.sql
+\i database/schema.sql
 
 -- Record this migration
 CREATE TABLE IF NOT EXISTS migrations (
