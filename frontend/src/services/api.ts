@@ -1,0 +1,372 @@
+import axios, { type AxiosResponse } from "axios"
+import Cookies from "js-cookie"
+import type {
+  ApiResponse,
+  AuthResponse,
+  User,
+  Course,
+  Note,
+  Review,
+  Lecturer,
+  LecturerFeedback,
+  Quote,
+  Deal,
+} from "@/types"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+
+// Create axios instance
+const api = axios.create({
+  baseURL: `${API_URL}/api`,
+  headers: {
+    "Content-Type": "application/json",
+  },
+})
+
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const token = Cookies.get("auth_token")
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// Handle auth errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      Cookies.remove("auth_token")
+      window.location.href = "/login"
+    }
+    return Promise.reject(error)
+  },
+)
+
+// Auth API
+export const authAPI = {
+  signup: async (data: {
+    name: string
+    email: string
+    password: string
+  }): Promise<ApiResponse<{ user: User }>> => {
+    const response: AxiosResponse<ApiResponse<{ user: User }>> = await api.post("/auth/signup", data)
+    return response.data
+  },
+
+  login: async (data: { email: string; password: string }): Promise<ApiResponse<AuthResponse>> => {
+    const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post("/auth/login", data)
+    return response.data
+  },
+
+  verifyEmail: async (token: string): Promise<ApiResponse<{ user: User }>> => {
+    const response: AxiosResponse<ApiResponse<{ user: User }>> = await api.post("/auth/verify", { token })
+    return response.data
+  },
+
+  requestPasswordReset: async (email: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post("/auth/request-reset", { email })
+    return response.data
+  },
+
+  resetPassword: async (token: string, newPassword: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post("/auth/reset-password", { token, newPassword })
+    return response.data
+  },
+
+  getProfile: async (): Promise<ApiResponse<{ user: User }>> => {
+    const response: AxiosResponse<ApiResponse<{ user: User }>> = await api.get("/auth/profile")
+    return response.data
+  },
+
+  updateProfile: async (data: { name: string }): Promise<ApiResponse<{ user: User }>> => {
+    const response: AxiosResponse<ApiResponse<{ user: User }>> = await api.put("/auth/profile", data)
+    return response.data
+  },
+}
+
+// Course API
+export const courseAPI = {
+  getCourses: async (params?: {
+    faculty?: string
+    year?: number
+    search?: string
+  }): Promise<ApiResponse<{ courses: Course[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ courses: Course[]; total: number }>> = await api.get("/courses", {
+      params,
+    })
+    return response.data
+  },
+
+  getCourse: async (id: string): Promise<ApiResponse<{ course: Course; recent_reviews: Review[] }>> => {
+    const response: AxiosResponse<ApiResponse<{ course: Course; recent_reviews: Review[] }>> = await api.get(
+      `/courses/${id}`,
+    )
+    return response.data
+  },
+
+  createCourse: async (data: {
+    code: string
+    name: string
+    description?: string
+    faculty: string
+    year: number
+    credits: number
+  }): Promise<ApiResponse<{ course: Course }>> => {
+    const response: AxiosResponse<ApiResponse<{ course: Course }>> = await api.post("/courses", data)
+    return response.data
+  },
+
+  deleteCourse: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/courses/${id}`)
+    return response.data
+  },
+}
+
+// Note API
+export const noteAPI = {
+  getNotes: async (params?: {
+    course_code?: string
+    type?: string
+    search?: string
+  }): Promise<ApiResponse<{ notes: Note[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ notes: Note[]; total: number }>> = await api.get("/notes", { params })
+    return response.data
+  },
+
+  uploadNote: async (formData: FormData): Promise<ApiResponse<{ note: Note }>> => {
+    const response: AxiosResponse<ApiResponse<{ note: Note }>> = await api.post("/notes", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+    return response.data
+  },
+
+  downloadNote: async (id: string): Promise<void> => {
+    const response = await api.get(`/notes/download/${id}`, {
+      responseType: "blob",
+    })
+
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement("a")
+    link.href = url
+
+    let filename = "download.zip" // Default fallback with .zip extension
+
+    const contentDisposition = response.headers["content-disposition"]
+    if (contentDisposition) {
+      // Try multiple patterns to extract filename
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, "")
+      }
+    }
+
+    // Ensure filename has .zip extension
+    if (!filename.toLowerCase().endsWith(".zip")) {
+      const nameWithoutExt = filename.replace(/\.[^/.]+$/, "")
+      filename = `${nameWithoutExt}.zip`
+    }
+
+    link.setAttribute("download", filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  },
+
+  getUserNotes: async (): Promise<ApiResponse<{ notes: Note[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ notes: Note[]; total: number }>> = await api.get("/notes/my-notes")
+    return response.data
+  },
+
+  deleteNote: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/notes/${id}`)
+    return response.data
+  },
+
+  getAllNotes: async (): Promise<ApiResponse<{ notes: Note[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ notes: Note[]; total: number }>> = await api.get("/notes/admin/all")
+    return response.data
+  },
+}
+
+// Review API
+export const reviewAPI = {
+  getReviews: async (params?: {
+    course_id?: string
+    limit?: number
+    offset?: number
+  }): Promise<ApiResponse<{ reviews: Review[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ reviews: Review[]; total: number }>> = await api.get("/reviews", {
+      params,
+    })
+    return response.data
+  },
+
+  createReview: async (data: {
+    course_id: string
+    rating: number
+    comment?: string
+    anonymous?: boolean
+    difficulty_rating?: number
+    workload_rating?: number
+    would_recommend?: boolean
+  }): Promise<ApiResponse<{ review: Review }>> => {
+    const response: AxiosResponse<ApiResponse<{ review: Review }>> = await api.post("/reviews", data)
+    return response.data
+  },
+
+  deleteReview: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/reviews/${id}`)
+    return response.data
+  },
+
+  getUserReviews: async (): Promise<ApiResponse<{ reviews: Review[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ reviews: Review[]; total: number }>> =
+      await api.get("/reviews/my-reviews")
+    return response.data
+  },
+}
+
+// Lecturer API
+export const lecturerAPI = {
+  getLecturers: async (params?: { search?: string }): Promise<
+    ApiResponse<{ lecturers: Lecturer[]; total: number }>
+  > => {
+    const response: AxiosResponse<ApiResponse<{ lecturers: Lecturer[]; total: number }>> = await api.get("/lecturers", {
+      params,
+    })
+    return response.data
+  },
+  getLecturer: async (
+    id: string,
+  ): Promise<ApiResponse<{ lecturer: Lecturer; recent_feedback: LecturerFeedback[]; recent_quotes: Quote[] }>> => {
+    const response: AxiosResponse<
+      ApiResponse<{ lecturer: Lecturer; recent_feedback: LecturerFeedback[]; recent_quotes: Quote[] }>
+    > = await api.get(`/lecturers/${id}`)
+    return response.data
+  },
+  createLecturer: async (data: {
+    name: string
+    profile_image_url?: string
+    description?: string
+  }): Promise<ApiResponse<{ lecturer: Lecturer }>> => {
+    const response: AxiosResponse<ApiResponse<{ lecturer: Lecturer }>> = await api.post("/lecturers", data)
+    return response.data
+  },
+
+  deleteLecturer: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/lecturers/${id}`)
+    return response.data
+  },
+}
+
+// Lecturer Feedback API
+export const lecturerFeedbackAPI = {
+  getFeedback: async (params?: {
+    lecturer_id?: string
+    course_id?: string
+    limit?: number
+    offset?: number
+  }): Promise<ApiResponse<{ feedback: LecturerFeedback[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ feedback: LecturerFeedback[]; total: number }>> = await api.get(
+      "/lecturer-feedback",
+      { params },
+    )
+    return response.data
+  },
+  createFeedback: async (data: {
+    lecturer_id?: string
+    lecturer_name?: string
+    course_id?: string
+    rating: number
+    comment?: string
+    anonymous?: boolean
+    teaching_quality?: number
+    communication_rating?: number
+    availability_rating?: number
+  }): Promise<ApiResponse<{ feedback: LecturerFeedback }>> => {
+    const response: AxiosResponse<ApiResponse<{ feedback: LecturerFeedback }>> = await api.post(
+      "/lecturer-feedback",
+      data,
+    )
+    return response.data
+  },
+  getUserFeedback: async (): Promise<ApiResponse<{ feedback: LecturerFeedback[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ feedback: LecturerFeedback[]; total: number }>> = await api.get(
+      "/lecturer-feedback/my-feedback",
+    )
+    return response.data
+  },
+}
+
+// Quote API
+export const quoteAPI = {
+  getQuotes: async (params?: {
+    lecturer_id?: string
+    search?: string
+    limit?: number
+    offset?: number
+  }): Promise<ApiResponse<{ quotes: Quote[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ quotes: Quote[]; total: number }>> = await api.get("/quotes", {
+      params,
+    })
+    return response.data
+  },
+  createQuote: async (data: {
+    lecturer_id: string
+    quote_text: string
+    context?: string
+  }): Promise<ApiResponse<{ quote: Quote }>> => {
+    const response: AxiosResponse<ApiResponse<{ quote: Quote }>> = await api.post("/quotes", data)
+    return response.data
+  },
+  deleteQuote: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/quotes/${id}`)
+    return response.data
+  },
+}
+
+// Deal API
+export const dealAPI = {
+  getDeals: async (params?: {
+    category?: string
+    search?: string
+    sort?: string
+    limit?: number
+    offset?: number
+  }): Promise<ApiResponse<{ deals: Deal[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ deals: Deal[]; total: number }>> = await api.get("/deals", {
+      params,
+    })
+    return response.data
+  },
+  createDeal: async (data: {
+    title: string
+    description?: string
+    original_price?: number
+    deal_price?: number
+    website_url?: string
+    website_name?: string
+    category?: string
+    image_url?: string
+    expires_at?: string
+  }): Promise<ApiResponse<{ deal: Deal }>> => {
+    const response: AxiosResponse<ApiResponse<{ deal: Deal }>> = await api.post("/deals", data)
+    return response.data
+  },
+  voteDeal: async (id: string, vote_type: "up" | "down"): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(`/deals/${id}/vote`, { vote_type })
+    return response.data
+  },
+  deleteDeal: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/deals/${id}`)
+    return response.data
+  },
+}
+
+export default api
