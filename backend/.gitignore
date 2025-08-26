@@ -17,6 +17,8 @@ frontend/.env
 
 # Build outputs
 .next/
+.DS_Store
+package-lock.json
 out/
 build/
 dist/
