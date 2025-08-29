@@ -65,11 +65,12 @@ export default function LecturersPage() {
     try {
       console.log("Submitting lecturer data:", data)
 
-      const response = await lecturerAPI.createLecturer({
+      const lecturerData = {
         name: data.name.trim(),
-        profile_image_url: data.profile_image_url?.trim() || "/default-profile.png",
         description: data.description?.trim() || "",
-      })
+      }
+
+      const response = await lecturerAPI.createLecturer(lecturerData)
 
       console.log("API response:", response)
 
@@ -77,7 +78,7 @@ export default function LecturersPage() {
         toast.success("Lecturer added successfully!")
         reset()
         setShowAddLecturerForm(false)
-        await loadLecturers() // Reload the lecturers list
+        await loadLecturers()
       } else {
         toast.error(response.message || "Failed to add lecturer.")
       }
@@ -140,13 +141,14 @@ export default function LecturersPage() {
                 error={errors.name?.message}
                 placeholder="e.g., Dr. Jane Doe"
               />
-              <Input
-                label="Profile Image URL (Optional)"
-                {...register("profile_image_url")}
-                error={errors.profile_image_url?.message}
-                placeholder="/default-profile.png"
-                helperText="Leave empty to use default placeholder image"
-              />
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Profile Picture:</strong> To add a profile picture, place a PNG file named after the lecturer
+                  in the <code className="bg-blue-100 px-1 rounded">frontend/public/images/profiles/</code> folder.
+                  <br />
+                  Example: For "John Smith", create <code className="bg-blue-100 px-1 rounded">johnsmith.png</code>
+                </p>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
                 <textarea
@@ -160,7 +162,13 @@ export default function LecturersPage() {
                 {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>}
               </div>
               <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" onClick={() => setShowAddLecturerForm(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddLecturerForm(false)
+                  }}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" loading={isSubmitting}>
@@ -171,7 +179,6 @@ export default function LecturersPage() {
           </Card>
         )}
 
-        {/* Search Bar */}
         <Card>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -184,7 +191,6 @@ export default function LecturersPage() {
           </div>
         </Card>
 
-        {/* Lecturers Grid */}
         {lecturers.length === 0 ? (
           <Card className="text-center py-12">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
