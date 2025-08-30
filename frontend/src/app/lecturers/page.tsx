@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/Card"
 import { useAuth } from "@/contexts/AuthContext"
 import { lecturerAPI } from "@/services/api"
 import type { Lecturer, LecturerForm } from "@/types"
-import { Users, Search, PlusCircle, MessageSquare, QuoteIcon, AlertCircle } from "lucide-react"
+import { Users, Search, PlusCircle, MessageSquare, QuoteIcon, AlertCircle, Trash2 } from "lucide-react"
 import { RatingStars } from "@/components/ui/RatingStars"
 
 export default function LecturersPage() {
@@ -88,6 +88,38 @@ export default function LecturersPage() {
       toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteLecturer = async (lecturerId: string, lecturerName: string) => {
+    if (!user || user.role !== "admin") {
+      toast.error("Admin access required")
+      return
+    }
+
+    if (
+      !confirm(
+        `Are you sure you want to delete "${lecturerName}"? This will also delete all related feedback and quotes.`,
+      )
+    ) {
+      return
+    }
+
+    try {
+      console.log("Deleting lecturer:", lecturerId)
+      const response = await lecturerAPI.deleteLecturer(lecturerId)
+      console.log("Lecturer deletion response:", response)
+
+      if (response.success) {
+        toast.success("Lecturer deleted successfully!")
+        await loadLecturers()
+      } else {
+        toast.error(response.message || "Failed to delete lecturer")
+      }
+    } catch (error: any) {
+      console.error("Lecturer deletion error:", error)
+      const errorMessage = error.response?.data?.message || error.message || "Failed to delete lecturer"
+      toast.error(errorMessage)
     }
   }
 
@@ -208,41 +240,55 @@ export default function LecturersPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {lecturers.map((lecturer) => (
-              <Link key={lecturer.id} href={`/lecturers/${lecturer.id}`}>
-                <Card className="flex flex-col items-center text-center p-6 hover:shadow-lg transition-shadow h-full">
-                  <img
-                    src={lecturer.profile_image_url || "/default-profile.png"}
-                    alt={lecturer.name}
-                    className="w-[120px] h-[160px] object-cover mb-4 rounded-md border-2 border-gray-200"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.src = "/default-profile.png"
+              <div key={lecturer.id} className="relative">
+                <Link href={`/lecturers/${lecturer.id}`}>
+                  <Card className="flex flex-col items-center text-center p-6 hover:shadow-lg transition-shadow h-full">
+                    <img
+                      src={lecturer.profile_image_url || "/default-profile.png"}
+                      alt={lecturer.name}
+                      className="w-[120px] h-[160px] object-cover mb-4 rounded-md border-2 border-gray-200"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = "/default-profile.png"
+                      }}
+                    />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{lecturer.name}</h3>
+                    {lecturer.description && (
+                      <p className="text-sm text-gray-600 line-clamp-3 mb-4">{lecturer.description}</p>
+                    )}
+                    <div className="flex items-center justify-center space-x-4 text-sm text-gray-600 mt-auto pt-4 border-t border-gray-100 w-full">
+                      <div className="flex items-center space-x-1">
+                        <MessageSquare className="w-4 h-4 text-primary-500" />
+                        <span>{lecturer.feedback_count || 0} Feedback</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <QuoteIcon className="w-4 h-4 text-purple-500" />
+                        <span>{lecturer.quote_count || 0} Quotes</span>
+                      </div>
+                    </div>
+                    {typeof lecturer.avg_feedback_rating === "number" && lecturer.avg_feedback_rating > 0 ? (
+                      <div className="flex items-center space-x-1 text-sm text-yellow-600 mt-2">
+                        <RatingStars rating={lecturer.avg_feedback_rating} size={16} />
+                        <span>{lecturer.avg_feedback_rating.toFixed(1)} Avg. Rating</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400 mt-2">No feedback yet</span>
+                    )}
+                  </Card>
+                </Link>
+                {user?.role === "admin" && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleDeleteLecturer(lecturer.id, lecturer.name)
                     }}
-                  />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{lecturer.name}</h3>
-                  {lecturer.description && (
-                    <p className="text-sm text-gray-600 line-clamp-3 mb-4">{lecturer.description}</p>
-                  )}
-                  <div className="flex items-center justify-center space-x-4 text-sm text-gray-600 mt-auto pt-4 border-t border-gray-100 w-full">
-                    <div className="flex items-center space-x-1">
-                      <MessageSquare className="w-4 h-4 text-primary-500" />
-                      <span>{lecturer.feedback_count || 0} Feedback</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <QuoteIcon className="w-4 h-4 text-purple-500" />
-                      <span>{lecturer.quote_count || 0} Quotes</span>
-                    </div>
-                  </div>
-                  {typeof lecturer.avg_feedback_rating === "number" && lecturer.avg_feedback_rating > 0 ? (
-                    <div className="flex items-center space-x-1 text-sm text-yellow-600 mt-2">
-                      <RatingStars rating={lecturer.avg_feedback_rating} size={16} />
-                      <span>{lecturer.avg_feedback_rating.toFixed(1)} Avg. Rating</span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-gray-400 mt-2">No feedback yet</span>
-                  )}
-                </Card>
-              </Link>
+                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-all z-10"
+                    title="Delete lecturer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         )}
