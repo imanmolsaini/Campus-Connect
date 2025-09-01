@@ -1,4 +1,4 @@
--- Migration 001: Initial Schema Creation
+-- Migration 001: Initial Schema Creation (test)
 -- Created: 2024-01-07
 -- Description: Create initial database schema for Campus Connect NZ
 
