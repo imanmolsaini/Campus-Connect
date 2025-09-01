@@ -156,7 +156,9 @@ export class LecturerController {
         return
       }
 
-      const { name, profile_image_url, description } = req.body as CreateLecturerRequest
+      const { name, description } = req.body as CreateLecturerRequest
+
+      const profileImageUrl = `/images/profiles/${name.trim().toLowerCase().replace(/\s+/g, "")}.png`
 
       // Validate required fields
       if (!name || name.trim().length === 0) {
@@ -180,14 +182,12 @@ export class LecturerController {
         return
       }
 
-      const defaultImageUrl = profile_image_url || "/default-profile.png"
-
       // Create new lecturer
       const result = await pool.query(
         `INSERT INTO lecturers (name, profile_image_url, description) 
          VALUES ($1, $2, $3) 
          RETURNING *`,
-        [name.trim(), defaultImageUrl, description?.trim() || null],
+        [name.trim(), profileImageUrl, description?.trim() || null],
       )
 
       const lecturer = result.rows[0]
@@ -222,7 +222,7 @@ export class LecturerController {
       }
 
       const { id } = req.params
-      const { name, profile_image_url, description } = req.body as CreateLecturerRequest
+      const { name, description } = req.body as CreateLecturerRequest
 
       // Validate required fields
       if (!name || name.trim().length === 0) {
@@ -234,7 +234,7 @@ export class LecturerController {
       }
 
       // Check if lecturer exists
-      const existingLecturer = await pool.query("SELECT id FROM lecturers WHERE id = $1", [id])
+      const existingLecturer = await pool.query("SELECT id, profile_image_url FROM lecturers WHERE id = $1", [id])
       if (existingLecturer.rows.length === 0) {
         res.status(404).json({
           success: false,
@@ -257,13 +257,15 @@ export class LecturerController {
         return
       }
 
+      const profileImageUrl = `/images/profiles/${name.trim().toLowerCase().replace(/\s+/g, "")}.png`
+
       // Update lecturer
       const result = await pool.query(
         `UPDATE lecturers 
          SET name = $1, profile_image_url = $2, description = $3, updated_at = CURRENT_TIMESTAMP
          WHERE id = $4 
          RETURNING *`,
-        [name.trim(), profile_image_url || "/default-profile.png", description?.trim() || null, id],
+        [name.trim(), profileImageUrl, description?.trim() || null, id],
       )
 
       const lecturer = result.rows[0]

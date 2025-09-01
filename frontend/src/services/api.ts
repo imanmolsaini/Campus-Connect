@@ -252,7 +252,6 @@ export const lecturerAPI = {
   },
   createLecturer: async (data: {
     name: string
-    profile_image_url?: string
     description?: string
   }): Promise<ApiResponse<{ lecturer: Lecturer }>> => {
     const response: AxiosResponse<ApiResponse<{ lecturer: Lecturer }>> = await api.post("/lecturers", data)
