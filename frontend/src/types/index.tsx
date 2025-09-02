@@ -92,7 +92,7 @@ export interface LecturerFeedback {
   user_name?: string
   rating: number
   comment?: string
-  anonymous: boolean
+  anonymous?: boolean
   teaching_quality?: number
   communication_rating?: number
   availability_rating?: number
@@ -136,6 +136,41 @@ export interface Deal {
   upvotes?: number
   downvotes?: number
   user_vote?: "up" | "down"
+}
+
+// Job types
+export interface Job {
+  id: string
+  user_id: string
+  uploader_name?: string
+  title: string
+  job_type: "part-time" | "full-time" | "casual" | "voluntary"
+  pay_rate?: string
+  pay_type?: "hourly" | "weekly" | "fixed" | "unpaid"
+  description?: string
+  location: string
+  contact_info: string
+  expires_at: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  // Additional fields from joins
+  upvotes?: number
+  downvotes?: number
+  user_vote?: "up" | "down"
+  comment_count?: number
+  is_expired?: boolean
+}
+
+// Job comment types
+export interface JobComment {
+  id: string
+  job_id: string
+  user_id: string
+  user_name?: string
+  comment_text: string
+  created_at: string
+  updated_at: string
 }
 
 // Form types
@@ -202,6 +237,21 @@ export interface DealForm {
   category?: string
   image_url?: string
   expires_at?: string
+}
+
+export interface JobForm {
+  title: string
+  job_type: "part-time" | "full-time" | "casual" | "voluntary"
+  pay_rate?: string
+  pay_type?: "hourly" | "weekly" | "fixed" | "unpaid"
+  description?: string
+  location: string
+  contact_info: string
+  expires_at: string
+}
+
+export interface JobCommentForm {
+  comment_text: string
 }
 
 // API Response types

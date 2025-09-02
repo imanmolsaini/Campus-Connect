@@ -11,6 +11,8 @@ import type {
   LecturerFeedback,
   Quote,
   Deal,
+  Job,
+  JobComment,
 } from "@/types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
@@ -364,6 +366,65 @@ export const dealAPI = {
   },
   deleteDeal: async (id: string): Promise<ApiResponse> => {
     const response: AxiosResponse<ApiResponse> = await api.delete(`/deals/${id}`)
+    return response.data
+  },
+}
+
+// Job API
+export const jobAPI = {
+  getJobs: async (params?: {
+    job_type?: string
+    location?: string
+    search?: string
+    sort?: string
+    limit?: number
+    offset?: number
+  }): Promise<ApiResponse<{ jobs: Job[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ jobs: Job[]; total: number }>> = await api.get("/jobs", {
+      params,
+    })
+    return response.data
+  },
+  createJob: async (data: {
+    title: string
+    job_type: "part-time" | "full-time" | "casual" | "voluntary"
+    pay_rate?: string
+    pay_type?: "hourly" | "weekly" | "fixed" | "unpaid"
+    description?: string
+    location: string
+    contact_info: string
+    expires_at: string
+  }): Promise<ApiResponse<{ job: Job }>> => {
+    const response: AxiosResponse<ApiResponse<{ job: Job }>> = await api.post("/jobs", data)
+    return response.data
+  },
+  voteJob: async (id: string, vote_type: "up" | "down"): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(`/jobs/${id}/vote`, { vote_type })
+    return response.data
+  },
+  deleteJob: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/jobs/${id}`)
+    return response.data
+  },
+  getJobComments: async (
+    id: string,
+    params?: { limit?: number; offset?: number },
+  ): Promise<ApiResponse<{ comments: JobComment[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ comments: JobComment[]; total: number }>> = await api.get(
+      `/jobs/${id}/comments`,
+      { params },
+    )
+    return response.data
+  },
+  createJobComment: async (
+    id: string,
+    data: { comment_text: string },
+  ): Promise<ApiResponse<{ comment: JobComment }>> => {
+    const response: AxiosResponse<ApiResponse<{ comment: JobComment }>> = await api.post(`/jobs/${id}/comments`, data)
+    return response.data
+  },
+  deleteJobComment: async (commentId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/jobs/comments/${commentId}`)
     return response.data
   },
 }
