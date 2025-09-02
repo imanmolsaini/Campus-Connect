@@ -96,6 +96,23 @@ export const createDealSchema = Joi.object({
   expires_at: Joi.date().iso().optional(),
 })
 
+export const createJobSchema = Joi.object({
+  title: Joi.string().min(1).max(500).required(),
+  job_type: Joi.string().valid("part-time", "full-time", "casual", "voluntary").required(),
+  pay_rate: Joi.string().max(100).optional().allow(""),
+  pay_type: Joi.string().valid("hourly", "weekly", "fixed", "unpaid").optional(),
+  description: Joi.string().max(2000).optional().allow(""),
+  location: Joi.string().min(1).max(200).required(),
+  contact_info: Joi.string().min(1).max(1000).required(),
+  expires_at: Joi.date().iso().greater("now").required().messages({
+    "date.greater": "Expiry date must be in the future",
+  }),
+})
+
+export const createJobCommentSchema = Joi.object({
+  comment_text: Joi.string().min(1).max(1000).required(),
+})
+
 export const createCourseSchema = Joi.object({
   code: Joi.string().min(1).max(20).required().messages({
     "string.empty": "Course code is required",
