@@ -156,10 +156,10 @@ export default function DashboardPage() {
                 Write Review
               </Button>
             </Link>
-            <Link href="/lecturer-feedback">
+            <Link href="/lecturers">
               <Button variant="outline" className="w-full justify-start">
                 <MessageSquare className="w-4 h-4 mr-2" />
-                Give Feedback
+                Lecturer Feedback
               </Button>
             </Link>
           </div>
