@@ -6,7 +6,20 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/Button"
-import { User, LogOut, Menu, X, BookOpen, Upload, Star, Users, QuoteIcon, DollarSign, Briefcase } from "lucide-react" // Added Briefcase for jobs
+import {
+  User,
+  LogOut,
+  Menu,
+  X,
+  BookOpen,
+  Upload,
+  Star,
+  Users,
+  QuoteIcon,
+  DollarSign,
+  Briefcase,
+  Calendar,
+} from "lucide-react" // Added Briefcase for jobs, Calendar for events
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth()
@@ -28,6 +41,7 @@ export const Header: React.FC = () => {
         { name: "Quotes", href: "/quotes", icon: QuoteIcon }, // New Quotes link
         { name: "Deals", href: "/deals", icon: DollarSign }, // Added Deals navigation
         { name: "Jobs/Voluntary", href: "/jobs", icon: Briefcase }, // Added Jobs/Voluntary navigation
+        { name: "Events", href: "/events", icon: Calendar }, // Added Events navigation
       ]
     : []
 

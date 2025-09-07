@@ -13,6 +13,7 @@ import type {
   Deal,
   Job,
   JobComment,
+  Event,
 } from "@/types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
@@ -425,6 +426,42 @@ export const jobAPI = {
   },
   deleteJobComment: async (commentId: string): Promise<ApiResponse> => {
     const response: AxiosResponse<ApiResponse> = await api.delete(`/jobs/comments/${commentId}`)
+    return response.data
+  },
+}
+
+// Event API
+export const eventAPI = {
+  getEvents: async (params?: {
+    event_type?: string
+    search?: string
+    sort?: string
+    limit?: number
+    offset?: number
+  }): Promise<ApiResponse<{ events: Event[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ events: Event[]; total: number }>> = await api.get("/events", {
+      params,
+    })
+    return response.data
+  },
+  createEvent: async (data: {
+    event_name: string
+    event_place: string
+    event_time: string
+    event_type: string
+    event_description?: string
+    event_location: string
+    image_url?: string
+  }): Promise<ApiResponse<{ event: Event }>> => {
+    const response: AxiosResponse<ApiResponse<{ event: Event }>> = await api.post("/events", data)
+    return response.data
+  },
+  markInterest: async (id: string, interest_type: "interested" | "not_interested"): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(`/events/${id}/interest`, { interest_type })
+    return response.data
+  },
+  deleteEvent: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/events/${id}`)
     return response.data
   },
 }
