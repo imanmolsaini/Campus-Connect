@@ -35,7 +35,7 @@ export const Header: React.FC = () => {
   const navigation = user
     ? [
         { name: "Dashboard", href: "/dashboard", icon: BookOpen },
-        { name: "Upload Notes", href: "/upload", icon: Upload },
+        { name: "Notes", href: "/upload", icon: Upload },
         { name: "Courses", href: "/courses", icon: BookOpen },
         { name: "Reviews", href: "/reviews", icon: Star },
         { name: "Lecturers", href: "/lecturers", icon: Users },
@@ -48,11 +48,11 @@ export const Header: React.FC = () => {
 
   return (
     <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 backdrop-blur-lg border-b border-blue-500/20 shadow-lg">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+      <div className="max-w-7xl pl-6 pr-4 sm:pl-8 sm:pr-6 lg:pl-12 lg:pr-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center -ml-1">
-            <Link href="/" className="flex items-center space-x-1 group">
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center space-x-2 group">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-all duration-300">
                 <Image src="/campus-icon.png" alt="Campus Connect Icon" width={32} height={32} className="w-8 h-8" />
               </div>
