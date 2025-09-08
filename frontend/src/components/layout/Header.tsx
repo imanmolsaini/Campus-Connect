@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/Button"
+import Image from "next/image"
 import {
   User,
   LogOut,
@@ -19,7 +20,7 @@ import {
   DollarSign,
   Briefcase,
   Calendar,
-} from "lucide-react" // Added Briefcase for jobs, Calendar for events
+} from "lucide-react"
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth()
@@ -35,27 +36,27 @@ export const Header: React.FC = () => {
     ? [
         { name: "Dashboard", href: "/dashboard", icon: BookOpen },
         { name: "Upload Notes", href: "/upload", icon: Upload },
-        { name: "Courses", href: "/courses", icon: BookOpen }, // Added Courses link
+        { name: "Courses", href: "/courses", icon: BookOpen },
         { name: "Reviews", href: "/reviews", icon: Star },
-        { name: "Lecturers", href: "/lecturers", icon: Users }, // Changed from Feedback to Lecturers
-        { name: "Quotes", href: "/quotes", icon: QuoteIcon }, // New Quotes link
-        { name: "Deals", href: "/deals", icon: DollarSign }, // Added Deals navigation
-        { name: "Jobs/Voluntary", href: "/jobs", icon: Briefcase }, // Added Jobs/Voluntary navigation
-        { name: "Events", href: "/events", icon: Calendar }, // Added Events navigation
+        { name: "Lecturers", href: "/lecturers", icon: Users },
+        { name: "Quotes", href: "/quotes", icon: QuoteIcon },
+        { name: "Deals", href: "/deals", icon: DollarSign },
+        { name: "Jobs/Voluntary", href: "/jobs", icon: Briefcase },
+        { name: "Events", href: "/events", icon: Calendar },
       ]
     : []
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 backdrop-blur-lg border-b border-blue-500/20 shadow-lg">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
+          <div className="flex items-center -ml-1">
+            <Link href="/" className="flex items-center space-x-1 group">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-all duration-300">
+                <Image src="/campus-icon.png" alt="Campus Connect Icon" width={32} height={32} className="w-8 h-8" />
               </div>
-              <span className="text-xl font-bold text-gray-900">Campus Connect NZ</span>
+              <span className="text-xl font-bold text-white whitespace-nowrap">Campus Connect</span>
             </Link>
           </div>
 
@@ -67,7 +68,7 @@ export const Header: React.FC = () => {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center space-x-1 text-gray-600 hover:text-primary-600 transition-colors"
+                  className="flex items-center space-x-1 text-white/90 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all duration-300 backdrop-blur-sm"
                 >
                   <Icon className="w-4 h-4" />
                   <span>{item.name}</span>
@@ -81,20 +82,25 @@ export const Header: React.FC = () => {
             {user ? (
               <div className="flex items-center space-x-4">
                 <div className="hidden md:flex items-center space-x-2">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-700">{user.name}</span>
+                  <User className="w-4 h-4 text-white/80" />
+                  <span className="text-sm text-white/90">{user.name}</span>
                   {user.role === "admin" && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
                       Admin User
                     </span>
                   )}
                   {!user.verified && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-400/20 text-yellow-100 backdrop-blur-sm">
                       Unverified
                     </span>
                   )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-white hover:bg-white/10 border border-white/20 backdrop-blur-sm"
+                >
                   <LogOut className="w-4 h-4 mr-1" />
                   Logout
                 </Button>
@@ -102,19 +108,25 @@ export const Header: React.FC = () => {
             ) : (
               <div className="flex items-center space-x-4">
                 <Link href="/login">
-                  <Button variant="ghost" size="sm">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-white/10 border border-white/20 backdrop-blur-sm"
+                  >
                     Login
                   </Button>
                 </Link>
                 <Link href="/signup">
-                  <Button size="sm">Sign Up</Button>
+                  <Button size="sm" className="bg-white text-blue-700 hover:bg-white/90 shadow-lg">
+                    Sign Up
+                  </Button>
                 </Link>
               </div>
             )}
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+              className="md:hidden p-2 rounded-md text-white/80 hover:text-white hover:bg-white/10 backdrop-blur-sm transition-all duration-300"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -124,7 +136,7 @@ export const Header: React.FC = () => {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
+          <div className="md:hidden py-4 border-t border-white/20 bg-white/5 backdrop-blur-lg rounded-b-lg">
             <div className="space-y-2">
               {navigation.map((item) => {
                 const Icon = item.icon
@@ -132,7 +144,7 @@ export const Header: React.FC = () => {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-600 hover:text-primary-600 hover:bg-gray-50"
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Icon className="w-4 h-4" />
@@ -141,11 +153,11 @@ export const Header: React.FC = () => {
                 )
               })}
               {user && (
-                <div className="pt-2 border-t border-gray-200">
-                  <div className="px-3 py-2 text-sm text-gray-500">Signed in as {user.name}</div>
+                <div className="pt-2 border-t border-white/20">
+                  <div className="px-3 py-2 text-sm text-white/70">Signed in as {user.name}</div>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-600 hover:text-red-600 hover:bg-gray-50 w-full text-left"
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-white/90 hover:text-red-300 hover:bg-white/10 w-full text-left transition-all duration-300"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Logout</span>
