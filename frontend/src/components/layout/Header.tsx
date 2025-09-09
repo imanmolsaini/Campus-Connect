@@ -6,7 +6,21 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/Button"
-import { User, LogOut, Menu, X, BookOpen, Upload, Star, Users, QuoteIcon, DollarSign, Briefcase } from "lucide-react" // Added Briefcase for jobs
+import Image from "next/image"
+import {
+  User,
+  LogOut,
+  Menu,
+  X,
+  BookOpen,
+  Upload,
+  Star,
+  Users,
+  QuoteIcon,
+  DollarSign,
+  Briefcase,
+  Calendar,
+} from "lucide-react"
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth()
@@ -21,25 +35,26 @@ export const Header: React.FC = () => {
   const navigation = user
     ? [
         { name: "Dashboard", href: "/dashboard", icon: BookOpen },
-        { name: "Upload Notes", href: "/upload", icon: Upload },
-        { name: "Courses", href: "/courses", icon: BookOpen }, // Added Courses link
+        { name: "Notes", href: "/upload", icon: Upload },
+        { name: "Courses", href: "/courses", icon: BookOpen },
         { name: "Reviews", href: "/reviews", icon: Star },
-        { name: "Lecturers", href: "/lecturers", icon: Users }, // Changed from Feedback to Lecturers
-        { name: "Quotes", href: "/quotes", icon: QuoteIcon }, // New Quotes link
-        { name: "Deals", href: "/deals", icon: DollarSign }, // Added Deals navigation
-        { name: "Jobs/Voluntary", href: "/jobs", icon: Briefcase }, // Added Jobs/Voluntary navigation
+        { name: "Lecturers", href: "/lecturers", icon: Users },
+        { name: "Quotes", href: "/quotes", icon: QuoteIcon },
+        { name: "Deals", href: "/deals", icon: DollarSign },
+        { name: "Jobs/Voluntary", href: "/jobs", icon: Briefcase },
+        { name: "Events", href: "/events", icon: Calendar },
       ]
     : []
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 backdrop-blur-lg border-b border-blue-500/20 shadow-lg">
+      <div className="max-w-7xl pl-6 pr-4 sm:pl-8 sm:pr-6 lg:pl-12 lg:pr-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-all duration-300">
+                <Image src="/campus-icon.png" alt="Campus Connect Icon" width={32} height={32} className="w-8 h-8" />
               </div>
               <span className="text-xl font-bold text-white whitespace-nowrap">Campus Connect</span>
             </Link>
@@ -102,7 +117,11 @@ export const Header: React.FC = () => {
                   </Button>
                 </Link>
                 <Link href="/signup">
-                  <Button size="sm" className="bg-white text-blue-700 hover:bg-white/90 shadow-lg">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-white/10 border border-white/20 backdrop-blur-sm"
+                  >
                     Sign Up
                   </Button>
                 </Link>

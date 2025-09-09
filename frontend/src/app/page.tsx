@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { Layout } from "@/components/layout/Layout"
 import { Button } from "@/components/ui/Button"
+import RotatingText from "@/components/ui/RotatingText"
 import { useAuth } from "@/contexts/AuthContext"
 import {
   BookOpen,
@@ -20,6 +21,14 @@ import {
 
 export default function HomePage() {
   const { user } = useAuth()
+
+  const rotatingPhrases = [
+    "share notes with fellow students",
+    "review the available courses",
+    "connect with fellow students",
+    "check best deals available",
+    "build your academic success together",
+  ]
 
   const features = [
     {
@@ -91,16 +100,19 @@ export default function HomePage() {
       icon: Award,
       title: "Improve Your Grades",
       description: "Access high-quality study materials and learn from top-performing students",
+      gradient: "from-yellow-500 to-orange-500",
     },
     {
       icon: Clock,
       title: "Save Time",
       description: "Find exactly what you need without spending hours searching for resources",
+      gradient: "from-blue-500 to-blue-600",
     },
     {
       icon: CheckCircle,
       title: "Make Better Decisions",
       description: "Choose courses and lecturers based on real student experiences and reviews",
+      gradient: "from-emerald-500 to-green-500",
     },
   ]
 
@@ -119,14 +131,20 @@ export default function HomePage() {
             <div className="space-y-6">
               <div className="feature-badge">
                 <Sparkles className="w-4 h-4" />
-                “Created by AUT Students, Inspired by AUT Students ❤️”
+                "Created by AUT Students, Inspired by AUT Students ❤️"
               </div>
               <h1 className="text-hero">
                 Welcome to <span className="text-blue-gradient">Campus Connect NZ</span>
               </h1>
               <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                The ultimate platform for AUT University students to share notes, review courses, and connect with
-                fellow students. Build your academic success together.
+                The ultimate platform for AUT University students to{" "}
+                <RotatingText
+                  texts={rotatingPhrases}
+                  rotationInterval={3000}
+                  transition={{ type: "spring", damping: 20, stiffness: 200 }}
+                  elementLevelClassName="text-blue-600 font-semibold"
+                />
+                .
               </p>
             </div>
 
@@ -183,7 +201,9 @@ export default function HomePage() {
               const Icon = benefit.icon
               return (
                 <div key={index} className="text-center space-y-4 group">
-                  <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300 shadow-blue-soft">
+                  <div
+                    className={`w-16 h-16 bg-gradient-to-r ${benefit.gradient} rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300 shadow-blue-soft`}
+                  >
                     <Icon className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary-700 transition-colors">
