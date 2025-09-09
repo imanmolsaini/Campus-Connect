@@ -16,6 +16,7 @@ import lecturerFeedbackRoutes from "@/routes/lecturerFeedback" // MODIFIED
 import quoteRoutes from "@/routes/quotes" // NEW
 import dealRoutes from "@/routes/deals" // Added deals routes
 import jobRoutes from "@/routes/jobs" // Added jobs routes
+import eventRoutes from "@/routes/events" // Added events routes
 
 // Load environment variables
 dotenv.config()
@@ -72,6 +73,7 @@ app.use("/api/lecturer-feedback", lecturerFeedbackRoutes) // MODIFIED
 app.use("/api/quotes", quoteRoutes) // NEW
 app.use("/api/deals", dealRoutes) // Added deals API route
 app.use("/api/jobs", jobRoutes) // Added jobs API route
+app.use("/api/events", eventRoutes) // Added events API route
 
 // 404 handler
 app.use("*", (req, res) => {

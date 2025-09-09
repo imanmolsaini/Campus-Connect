@@ -133,6 +133,62 @@ export interface Deal {
   user_vote?: "up" | "down"
 }
 
+// Event types (NEW)
+export interface Event {
+  id: string
+  user_id: string
+  event_name: string
+  event_place: string
+  event_time: Date
+  event_type: "concert" | "workshop" | "meetup" | "conference" | "social" | "academic" | "sports" | "other"
+  event_description?: string
+  event_location: string
+  image_url?: string
+  is_active: boolean
+  created_at: Date
+  updated_at: Date
+  // Additional fields from joins
+  organizer_name?: string
+  interested_count?: number
+  not_interested_count?: number
+  user_interest?: "interested" | "not_interested"
+}
+
+// Job types (NEW)
+export interface Job {
+  id: string
+  user_id: string
+  title: string
+  job_type: "part-time" | "full-time" | "casual" | "voluntary"
+  pay_rate?: string
+  pay_type?: "hourly" | "weekly" | "fixed" | "unpaid"
+  description?: string
+  location: string
+  contact_info: string
+  expires_at: Date
+  is_active: boolean
+  created_at: Date
+  updated_at: Date
+  // Additional fields from joins
+  poster_name?: string
+  upvotes?: number
+  downvotes?: number
+  user_vote?: "up" | "down"
+  comment_count?: number
+}
+
+// Job comment types (NEW)
+export interface JobComment {
+  id: string
+  job_id: string
+  user_id: string
+  comment_text: string
+  created_at: Date
+  updated_at: Date
+  // Additional fields from joins
+  commenter_name?: string
+}
+
 // Request types
 export interface AuthenticatedRequest extends Request {
   user?: UserPayload
@@ -229,4 +285,32 @@ export interface CreateDealRequest {
   category?: string
   image_url?: string
   expires_at?: string
+}
+
+// Event request types (NEW)
+export interface CreateEventRequest {
+  event_name: string
+  event_place: string
+  event_time: string
+  event_type: "concert" | "workshop" | "meetup" | "conference" | "social" | "academic" | "sports" | "other"
+  event_description?: string
+  event_location: string
+  image_url?: string
+}
+
+// Job request types (NEW)
+export interface CreateJobRequest {
+  title: string
+  job_type: "part-time" | "full-time" | "casual" | "voluntary"
+  pay_rate?: string
+  pay_type?: "hourly" | "weekly" | "fixed" | "unpaid"
+  description?: string
+  location: string
+  contact_info: string
+  expires_at: string
+}
+
+// Job comment request types (NEW)
+export interface CreateJobCommentRequest {
+  comment_text: string
 }

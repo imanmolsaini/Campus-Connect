@@ -6,20 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/Button"
-import {
-  User,
-  LogOut,
-  Menu,
-  X,
-  BookOpen,
-  Upload,
-  Star,
-  Users,
-  QuoteIcon,
-  DollarSign,
-  Briefcase,
-  Calendar,
-} from "lucide-react" // Added Briefcase for jobs, Calendar for events
+import { User, LogOut, Menu, X, BookOpen, Upload, Star, Users, QuoteIcon, DollarSign, Briefcase } from "lucide-react" // Added Briefcase for jobs
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth()
@@ -35,25 +22,24 @@ export const Header: React.FC = () => {
     ? [
         { name: "Dashboard", href: "/dashboard", icon: BookOpen },
         { name: "Upload Notes", href: "/upload", icon: Upload },
-        { name: "Courses", href: "/courses", icon: BookOpen },
+        { name: "Courses", href: "/courses", icon: BookOpen }, // Added Courses link
         { name: "Reviews", href: "/reviews", icon: Star },
         { name: "Lecturers", href: "/lecturers", icon: Users }, // Changed from Feedback to Lecturers
         { name: "Quotes", href: "/quotes", icon: QuoteIcon }, // New Quotes link
         { name: "Deals", href: "/deals", icon: DollarSign }, // Added Deals navigation
         { name: "Jobs/Voluntary", href: "/jobs", icon: Briefcase }, // Added Jobs/Voluntary navigation
-        { name: "Events", href: "/events", icon: Calendar }, // Added Events navigation
       ]
     : []
 
   return (
-    <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 backdrop-blur-lg border-b border-blue-500/20 shadow-lg">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+    <header className="bg-white shadow-sm border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center -ml-1">
-            <Link href="/" className="flex items-center space-x-1 group">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-all duration-300">
-                <Image src="/campus-icon.png" alt="Campus Connect Icon" width={32} height={32} className="w-8 h-8" />
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold text-white whitespace-nowrap">Campus Connect</span>
             </Link>

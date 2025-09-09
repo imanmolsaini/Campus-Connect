@@ -136,6 +136,20 @@ export const createCourseSchema = Joi.object({
   credits: Joi.number().integer().min(1).max(50).required(),
 })
 
+export const createEventSchema = Joi.object({
+  event_name: Joi.string().min(1).max(500).required(),
+  event_place: Joi.string().min(1).max(200).required(),
+  event_time: Joi.date().iso().required().messages({
+    "date.greater": "Event time must be in the future",
+  }),
+  event_type: Joi.string()
+    .valid("concert", "workshop", "meetup", "conference", "social", "academic", "sports", "other")
+    .required(),
+  event_description: Joi.string().max(2000).optional().allow(""),
+  event_location: Joi.string().min(1).max(500).required(),
+  image_url: Joi.string().uri().max(500).optional().allow(""),
+})
+
 // Validation middleware factory
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response<ApiResponse>, next: NextFunction): void => {
