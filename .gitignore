@@ -1,3 +1,5 @@
 .DS_Store
 database/.DS_Store
 pnpm-lock.yaml
+database/.env
+frontend/.env.local
