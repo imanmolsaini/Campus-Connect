@@ -126,3 +126,5 @@ Thumbs.db
 
 # Local development
 .vercel
+database/env
+frontend/env.local
