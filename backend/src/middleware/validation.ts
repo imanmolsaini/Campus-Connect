@@ -180,3 +180,29 @@ export const validate = (schema: Joi.ObjectSchema) => {
     next()
   }
 }
+
+export const createClubSchema = Joi.object({
+  name: Joi.string().min(1).max(200).required().messages({
+    "string.empty": "Club name is required",
+    "string.min": "Club name must be at least 1 character long",
+    "string.max": "Club name must be less than 200 characters",
+    "any.required": "Club name is required",
+  }),
+  description: Joi.string().min(1).max(1000).required().messages({ // ← Changed to required
+    "string.empty": "Club description is required",
+    "string.min": "Club description must be at least 1 character long",
+    "string.max": "Club description must be less than 1000 characters",
+    "any.required": "Club description is required",
+  }),
+  location: Joi.string().max(200).optional().allow(""),
+  club_date: Joi.date().iso().optional(),
+  club_time: Joi.string().max(50).optional().allow(""),
+  image_url: Joi.string().uri().max(500).optional().allow(""),
+  join_link: Joi.string().uri().max(500).optional().allow(""),
+  is_active: Joi.boolean().default(true),
+})
+
+export const createClubPostSchema = Joi.object({
+  content: Joi.string().min(1).max(2000).required(),
+  is_pinned: Joi.boolean().default(false),
+})

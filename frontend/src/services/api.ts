@@ -14,6 +14,7 @@ import type {
   Job,
   JobComment,
   Event,
+  Club,
 } from "@/types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
@@ -466,4 +467,64 @@ export const eventAPI = {
   },
 }
 
+
+// Club API
+export const clubAPI = {
+  getClubs: async (params?: { club_type?: string }): Promise<ApiResponse<{ clubs: Club[] }>> => {
+    const response: AxiosResponse<ApiResponse<{ clubs: Club[] }>> = await api.get("/clubs", { params })
+    return response.data
+  },
+
+  getClub: async (id: string): Promise<ApiResponse<{ club: Club; members: ClubMember[]; posts: ClubPost[] }>> => {
+    const response: AxiosResponse<ApiResponse<{ club: Club; members: ClubMember[]; posts: ClubPost[] }>> = await api.get(`/clubs/${id}`)
+    return response.data
+  },
+
+  createClub: async (data: { 
+    name: string; 
+    description?: string;
+    club_type?: string;
+    location?: string;
+    club_date?: string;
+    club_time?: string;
+    image_url?: string;
+    join_link?: string;
+    is_active?: boolean;
+  }): Promise<ApiResponse<{ club: Club }>> => {
+    const response: AxiosResponse<ApiResponse<{ club: Club }>> = await api.post("/clubs", data)
+    return response.data
+  },
+
+  deleteClub: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/clubs/${id}`)
+    return response.data
+  },
+
+  // Club membership
+  joinClub: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(`/clubs/${id}/join`)
+    return response.data
+  },
+
+  leaveClub: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(`/clubs/${id}/leave`)
+    return response.data
+  },
+
+  // Club posts
+  getPosts: async (clubId: string, params?: { limit?: number; offset?: number }): Promise<ApiResponse<{ posts: ClubPost[] }>> => {
+    const response: AxiosResponse<ApiResponse<{ posts: ClubPost[] }>> = await api.get(`/clubs/${clubId}/posts`, { params })
+    return response.data
+  },
+
+  createPost: async (clubId: string, data: { content: string; is_pinned?: boolean }): Promise<ApiResponse<{ post: ClubPost }>> => {
+    const response: AxiosResponse<ApiResponse<{ post: ClubPost }>> = await api.post(`/clubs/${clubId}/posts`, data)
+    return response.data
+  },
+
+  deletePost: async (clubId: string, postId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/clubs/${clubId}/posts/${postId}`)
+    return response.data
+  }
+}
 export default api

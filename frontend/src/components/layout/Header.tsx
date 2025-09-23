@@ -22,6 +22,27 @@ import {
   Calendar,
 } from "lucide-react"
 
+// ADDED: Custom HouseHeart icon component
+const HouseHeart = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M9.5 19l-5.6-5.6A3 3 0 013 10.68V9a3 3 0 013-3h12a3 3 0 013 3v1.68a3 3 0 01-.9 2.72L14.5 19" />
+    <path d="M11.5 9.5l1.5-1.5a2.12 2.12 0 013 0l1.5 1.5" />
+    <path d="M12.5 14.5l-1.5 1.5a2.12 2.12 0 01-3 0l-1.5-1.5" />
+    <path d="M19 21l-7-4-7 4" />
+  </svg>
+)
+
 export const Header: React.FC = () => {
   const { user, logout } = useAuth()
   const router = useRouter()
@@ -43,6 +64,7 @@ export const Header: React.FC = () => {
         { name: "Deals", href: "/deals", icon: DollarSign },
         { name: "Jobs/Voluntary", href: "/jobs", icon: Briefcase },
         { name: "Events", href: "/events", icon: Calendar },
+        { name: "Clubs", href: "/clubs", icon: HouseHeart },
       ]
     : []
 
@@ -114,8 +136,8 @@ export const Header: React.FC = () => {
                     className="text-white hover:bg-white/10 border border-white/20 backdrop-blur-sm"
                   >
                     Login
-                  </Button>
-                </Link>
+                    </Button>
+                  </Link>
                 <Link href="/signup">
                   <Button
                     variant="ghost"

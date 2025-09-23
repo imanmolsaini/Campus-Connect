@@ -288,3 +288,43 @@ export interface DealForm {
   image_url?: string
   expires_at?: string
 }
+
+// Club types
+export interface Club {
+  id: string
+  user_id: string
+  name: string
+  description: string
+  location?: string
+  club_type: "academic" | "sports" | "cultural" | "social" | "professional" | "religious" | "political" | "other"
+  club_date?: string
+  club_time?: string
+  image_url?: string
+  join_link?: string
+  members_count: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  creator_name?: string
+}
+
+export interface ClubMember {
+  id: string
+  club_id: string
+  user_id: string
+  role: "member" | "admin" | "moderator"
+  join_date: string
+}
+
+export interface ClubPost {
+  id: string
+  club_id: string
+  user_id: string
+  title: string
+  content: string
+  is_announcement: boolean
+  is_pinned: boolean
+  created_at: string
+  updated_at: string
+  author_name?: string
+}
