@@ -10,6 +10,7 @@ export class AuthController {
     try {
       const { name, email, password } = req.body;
 
+      
       // Check if user already exists
       const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
       if (existingUser.rows.length > 0) {
