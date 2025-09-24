@@ -11,3 +11,4 @@ router.post("/:id/interest", authenticateToken, EventController.markInterest)
 router.delete("/:id", authenticateToken, EventController.deleteEvent)
 
 export default router
+
