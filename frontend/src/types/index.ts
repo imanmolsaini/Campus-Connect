@@ -306,6 +306,7 @@ export interface Club {
   created_at: string
   updated_at: string
   creator_name?: string
+  creator_id: string;
 }
 
 export interface ClubMember {

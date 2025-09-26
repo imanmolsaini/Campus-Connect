@@ -22,7 +22,7 @@ CREATE TABLE clubs (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(200) NOT NULL,
   description TEXT NOT NULL,
-  location VARCHAR(500),
+  location VARCHAR(500),  
   club_date DATE,
   club_time TIME,
   image_url VARCHAR(500),

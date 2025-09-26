@@ -15,7 +15,7 @@ export class ClubController {
           u.name as creator_name,
           COALESCE(member_counts.count, 0) as members_count
         FROM clubs c
-        JOIN users u ON c.user_id = u.id
+        JOIN users u ON c.creator_id = u.id
         LEFT JOIN (
           SELECT club_id, COUNT(*) as count 
           FROM club_members 
@@ -71,15 +71,15 @@ export class ClubController {
   // UPDATE the createClub method in clubController.ts
 static async createClub(req: AuthenticatedRequest, res: Response<ApiResponse>): Promise<void> {
   try {
-    const userId = req.user!.id
-    const { name, description, location, club_date, club_time, image_url, join_link } = req.body
+    const creatorId = req.user!.id
+    const { name, description, location, club_date, club_time, image_url, join_link} = req.body
 
     const result = await pool.query(
       `INSERT INTO clubs (
-        user_id, name, description, location, club_date, club_time, image_url, join_link
+        creator_id, name, description, location, club_date, club_time, image_url, join_link 
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
       RETURNING *`,
-      [userId, name, description, location, club_date, club_time, image_url, join_link]
+      [creatorId, name, description, location, club_date, club_time, image_url, join_link]
     )
 
     const club = result.rows[0]
@@ -108,7 +108,7 @@ static async createClub(req: AuthenticatedRequest, res: Response<ApiResponse>): 
       const clubResult = await pool.query(
         `SELECT c.*, u.name as creator_name 
          FROM clubs c 
-         JOIN users u ON c.user_id = u.id 
+         JOIN users u ON c.creator_id = u.id 
          WHERE c.id = $1`,
         [id]
       )
@@ -124,7 +124,7 @@ static async createClub(req: AuthenticatedRequest, res: Response<ApiResponse>): 
       const club = clubResult.rows[0]
 
       // Authorization (owner or admin only)
-      if (club.user_id !== userId && userRole !== "admin") {
+      if (club.creator_id !== userId && userRole !== "admin") {
         res.status(403).json({
           success: false,
           message: "You can only delete your own clubs",
