@@ -528,3 +528,8 @@ export const clubAPI = {
   }
 }
 export default api
+//view button 
+export async function getClubById(clubId: string) {
+  const res = await fetch(`/api/clubs/${clubId}`);
+  return res.json();
+}

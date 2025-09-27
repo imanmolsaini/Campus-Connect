@@ -8,6 +8,9 @@ const router = Router()
 // Get all clubs
 router.get("/", ClubController.getClubs)
 
+// Get a single club by ID
+router.get("/:id", ClubController.getClub);
+
 // Create a club (requires login + verified user)
 router.post("/", authenticateToken, requireVerified, validate(createClubSchema), ClubController.createClub)
 

@@ -13,6 +13,7 @@ import { clubAPI } from '@/services/api';
 import { Club } from '@/types';
 import { Users, PlusCircle, Search, Link as LinkIcon, MapPin, Calendar, Clock } from 'lucide-react';
 import { Trash2 } from "lucide-react";
+import { ClubDetailsModal } from "@/components/clubs/ClubDetailsModal";
 
 // UPDATED: Refactored meeting_date to club_date and meeting_time to club_time
 interface ClubForm {
@@ -32,6 +33,7 @@ export default function ClubsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
 
   const {
     register,
@@ -233,61 +235,18 @@ export default function ClubsPage() {
           {filteredClubs.map((club) => (
             <Card key={club.id} className="p-4 flex flex-col justify-between w-full">
               <div>
+                {/*  show club name */}
                 <h2 className="text-xl font-semibold text-gray-900 truncate">
                   {club.name}
                 </h2>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                  {club.description || 'No description available'}
-                </p>
-
-
-                {/* UPDATED: Display club location, date, and time with updated field names */}
-                <div className="mt-3 space-y-1 text-sm text-gray-500">
-                  {club.location && (
-                    <div className="flex items-center">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      <span>{club.location}</span>
-                    </div>
-                  )}
-                  {club.club_date && (
-                    <div className="flex items-center">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      <span>{new Date(club.club_date).toLocaleDateString()}</span>
-                    </div>
-                  )}
-                  {club.club_time && (
-                    <div className="flex items-center">
-                      <Clock className="w-3 h-3 mr-1" />
-                      <span>{club.club_time}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Display join link if available */}
-                {club.join_link && (
-                  <div className="mt-3">
-                    <a
-                      href={club.join_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      <LinkIcon className="w-3 h-3 mr-1" />
-                      Join Club
-                    </a>
-                  </div>
-                )}
+                
               </div>
               <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-                <div className="flex items-center space-x-1">
-                  <Users className="w-4 h-4" />
-                  <span>{club.members_count || 0} members</span>
-                </div>
-                <Link href={`/clubs/${club.id}`}>
-                  <Button variant="ghost" size="sm">
-                    View
-                  </Button>
-                </Link>
+                
+                {/* View Button */}
+                <Button variant="ghost" size="sm" onClick={() => setSelectedClubId(club.id)}>
+                  View
+                </Button>
                 {/* Delete Button - only show if user is admin or club creator */}
                 {(user?.role === "admin" || user?.id === club.creator_id) && (
                   <Button
@@ -322,6 +281,12 @@ export default function ClubsPage() {
             </Card>
           )}
         </div>
+
+        <ClubDetailsModal
+          clubId={selectedClubId}
+          open={!!selectedClubId}
+          onClose={() => setSelectedClubId(null)}
+        />
       </div>
     </Layout>
   );

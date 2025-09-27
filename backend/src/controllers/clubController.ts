@@ -69,34 +69,34 @@ export class ClubController {
   }
 
   // UPDATE the createClub method in clubController.ts
-static async createClub(req: AuthenticatedRequest, res: Response<ApiResponse>): Promise<void> {
-  try {
-    const creatorId = req.user!.id
-    const { name, description, location, club_date, club_time, image_url, join_link} = req.body
+  static async createClub(req: AuthenticatedRequest, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const creatorId = req.user!.id
+      const { name, description, location, club_date, club_time, image_url, join_link } = req.body
 
-    const result = await pool.query(
-      `INSERT INTO clubs (
+      const result = await pool.query(
+        `INSERT INTO clubs (
         creator_id, name, description, location, club_date, club_time, image_url, join_link 
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
       RETURNING *`,
-      [creatorId, name, description, location, club_date, club_time, image_url, join_link]
-    )
+        [creatorId, name, description, location, club_date, club_time, image_url, join_link]
+      )
 
-    const club = result.rows[0]
+      const club = result.rows[0]
 
-    res.status(201).json({
-      success: true,
-      message: "Club created successfully",
-      data: { club },
-    })
-  } catch (error) {
-    console.error("Create club error:", error)
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    })
+      res.status(201).json({
+        success: true,
+        message: "Club created successfully",
+        data: { club },
+      })
+    } catch (error) {
+      console.error("Create club error:", error)
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      })
+    }
   }
-}
   // DELETE club
   static async deleteClub(req: AuthenticatedRequest, res: Response<ApiResponse>): Promise<void> {
     try {
@@ -144,6 +144,22 @@ static async createClub(req: AuthenticatedRequest, res: Response<ApiResponse>): 
         success: false,
         message: "Internal server error",
       })
+    }
+  }
+
+  static async getClub(req: Request, res: Response) {
+    try {
+      const clubId = req.params.id
+      const result = await pool.query("SELECT * FROM clubs WHERE id = $1", [clubId])
+      if (result.rows.length === 0) {
+        res.status(404).json({ success: false, message: "Club not found" })
+        return
+      }
+      res.json({ success: true, club: result.rows[0] })
+      return
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Internal server error" })
+      return
     }
   }
 }
