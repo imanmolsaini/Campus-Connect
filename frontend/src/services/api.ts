@@ -525,11 +525,19 @@ export const clubAPI = {
   deletePost: async (clubId: string, postId: string): Promise<ApiResponse> => {
     const response: AxiosResponse<ApiResponse> = await api.delete(`/clubs/${clubId}/posts/${postId}`)
     return response.data
-  }
+  },
+
+  applyToClub: async (
+    clubId: string,
+    form: { name: string; studentId: string; reason: string }
+  ) => {
+    const response = await api.post(`/clubs/apply/${clubId}`, form);
+    return response.data;
+  },
 }
 export default api
 //view button 
 export async function getClubById(clubId: string) {
   const res = await fetch(`/api/clubs/${clubId}`);
   return res.json();
-}
+};

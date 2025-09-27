@@ -17,4 +17,7 @@ router.post("/", authenticateToken, requireVerified, validate(createClubSchema),
 // Delete a club
 router.delete("/:id", authenticateToken, ClubController.deleteClub)
 
+// Apply to a club
+router.post("/apply/:id", ClubController.applyToClub);
+
 export default router

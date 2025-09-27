@@ -1,6 +1,7 @@
 // component for displaying club details in a modal
 import React, { useEffect, useState } from "react";
 import { clubAPI } from "@/services/api";
+import { useRouter } from "next/navigation";
 
 interface ClubDetailsModalProps {
   clubId: string | null;
@@ -11,6 +12,7 @@ interface ClubDetailsModalProps {
 export function ClubDetailsModal({ clubId, open, onClose }: ClubDetailsModalProps) {
   const [club, setClub] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (open && clubId) {
@@ -60,11 +62,14 @@ export function ClubDetailsModal({ clubId, open, onClose }: ClubDetailsModalProp
                 </div>
               )}
             </div>
-            {/* Placeholder Join button */}
+            {/* join club button */}
             <button
-              className="mt-4 w-full px-6 py-2 bg-blue-600 text-white rounded opacity-50 cursor-not-allowed"
+              className="mt-4 w-full px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
               type="button"
-              disabled
+              onClick={() => {
+                onClose();
+                router.push(`/clubs/join/${club.id}`);
+              }}
             >
               Join
             </button>

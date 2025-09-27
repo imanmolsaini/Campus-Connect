@@ -1,6 +1,7 @@
 import type { Request, Response } from "express"
 import pool from "@/config/database"
 import type { AuthenticatedRequest, ApiResponse } from "@/types"
+import { sendEmail } from "@/services/emailService"
 
 export class ClubController {
   // GET clubs
@@ -160,6 +161,43 @@ export class ClubController {
     } catch (error) {
       res.status(500).json({ success: false, message: "Internal server error" })
       return
+    }
+  }
+
+  static async applyToClub(req: Request, res: Response) {
+    try {
+      const clubId = req.params.id
+      const { name, studentId, reason } = req.body
+
+      // Fetch club and admin email
+      const clubResult = await pool.query("SELECT * FROM clubs WHERE id = $1", [clubId])
+      if (clubResult.rows.length === 0) {
+        return res.status(404).json({ success: false, message: "Club not found" })
+      }
+      const club = clubResult.rows[0]
+
+      // Fetch admin user
+      const adminResult = await pool.query("SELECT email FROM users WHERE id = $1", [club.creator_id])
+      if (adminResult.rows.length === 0) {
+        return res.status(404).json({ success: false, message: "Club admin not found" })
+      }
+      const adminEmail = adminResult.rows[0].email
+
+      // Prepare email content
+      const subject = `New Club Application for ${club.name}`
+      const text = `Applicant Name: ${name}\nStudent ID: ${studentId}\nReason: ${reason}`
+      const html = `
+        <p><strong>Applicant Name:</strong> ${name}</p>
+        <p><strong>Student ID:</strong> ${studentId}</p>
+        <p><strong>Reason:</strong> ${reason}</p>
+      `
+
+      // Send email 
+      await sendEmail(adminEmail, subject, text, html)
+
+      return res.json({ success: true, message: "Application sent to club admin." })
+    } catch (error) {
+      return res.status(500).json({ success: false, message: "Failed to send application." })
     }
   }
 }

@@ -1,5 +1,6 @@
 import transporter from "@/config/email"
 import { v4 as uuidv4 } from "uuid"
+import nodemailer from "nodemailer"
 
 export class EmailService {
   static async sendVerificationEmail(email: string, name: string, token: string): Promise<void> {
@@ -207,4 +208,50 @@ export class EmailService {
   static generateToken(): string {
     return uuidv4()
   }
+}
+
+export async function sendClubApplicationEmail(to: string, { clubName, applicantName, studentId, reason }: {
+  clubName: string;
+  applicantName: string;
+  studentId: string;
+  reason: string;
+}) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.FROM_EMAIL,
+    to,
+    subject: `New Club Application for ${clubName}`,
+    text: `Applicant Name: ${applicantName}\nStudent ID: ${studentId}\nReason: ${reason}`,
+    html: `<p><strong>Applicant Name:</strong> ${applicantName}</p>
+           <p><strong>Student ID:</strong> ${studentId}</p>
+           <p><strong>Reason:</strong> ${reason}</p>`,
+  });
+}
+
+export async function sendEmail(to: string, subject: string, text: string, html?: string) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    secure: process.env.SMTP_SECURE === "true",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.FROM_EMAIL,
+    to,
+    subject,
+    text,
+    html,
+  });
 }
