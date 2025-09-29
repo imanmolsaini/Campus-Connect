@@ -166,38 +166,126 @@ export class ClubController {
 
   static async applyToClub(req: Request, res: Response) {
     try {
-      const clubId = req.params.id
-      const { name, studentId, reason } = req.body
+      const clubId = req.params.id;
+      const { name, studentId, reason } = req.body;
+      const userId = (req as AuthenticatedRequest).user!.id;
 
       // Fetch club and admin email
-      const clubResult = await pool.query("SELECT * FROM clubs WHERE id = $1", [clubId])
+      const clubResult = await pool.query("SELECT * FROM clubs WHERE id = $1", [clubId]);
       if (clubResult.rows.length === 0) {
-        return res.status(404).json({ success: false, message: "Club not found" })
+        return res.status(404).json({ success: false, message: "Club not found" });
       }
-      const club = clubResult.rows[0]
+      const club = clubResult.rows[0];
 
       // Fetch admin user
-      const adminResult = await pool.query("SELECT email FROM users WHERE id = $1", [club.creator_id])
+      const adminResult = await pool.query("SELECT email FROM users WHERE id = $1", [club.creator_id]);
       if (adminResult.rows.length === 0) {
-        return res.status(404).json({ success: false, message: "Club admin not found" })
+        return res.status(404).json({ success: false, message: "Club admin not found" });
       }
-      const adminEmail = adminResult.rows[0].email
+      const adminEmail = adminResult.rows[0].email;
+
+      // Insert application into club_applications
+      await pool.query(
+        `INSERT INTO club_applications (club_id, user_id, name, student_id, reason, status)
+         VALUES ($1, $2, $3, $4, $5, 'pending')`,
+        [clubId, userId, name, studentId, reason]
+      );
 
       // Prepare email content
-      const subject = `New Club Application for ${club.name}`
-      const text = `Applicant Name: ${name}\nStudent ID: ${studentId}\nReason: ${reason}`
+      const subject = `New Club Application for ${club.name}`;
+      const text = `Applicant Name: ${name}\nStudent ID: ${studentId}\nReason: ${reason}`;
       const html = `
         <p><strong>Applicant Name:</strong> ${name}</p>
         <p><strong>Student ID:</strong> ${studentId}</p>
         <p><strong>Reason:</strong> ${reason}</p>
-      `
+      `;
 
       // Send email 
-      await sendEmail(adminEmail, subject, text, html)
+      await sendEmail(adminEmail, subject, text, html);
 
-      return res.json({ success: true, message: "Application sent to club admin." })
+      return res.json({ success: true, message: "Application sent to club admin." });
     } catch (error) {
-      return res.status(500).json({ success: false, message: "Failed to send application." })
+      console.error("Apply to club error:", error); // bug handling 
+      return res.status(500).json({ success: false, message: "Failed to send application." });
+    }
+  }
+
+  // Get all applications for a club (admin only)
+  static async getClubApplications(req: AuthenticatedRequest, res: Response) {
+    try {
+      const clubId = req.params.id;
+      const userId = req.user!.id;
+
+      // Only club creator or admin can view
+      const club = await pool.query("SELECT * FROM clubs WHERE id = $1", [clubId]);
+      if (!club.rows.length || (club.rows[0].creator_id !== userId && req.user!.role !== "admin")) {
+        return res.status(403).json({ success: false, message: "Forbidden" });
+      }
+
+      const apps = await pool.query(
+        `SELECT ca.*, u.email FROM club_applications ca JOIN users u ON ca.user_id = u.id WHERE ca.club_id = $1 AND ca.status = 'pending'`,
+        [clubId]
+      );
+      return res.json({ success: true, applications: apps.rows });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: "Failed to fetch applications" });
+    }
+  }
+
+  // Accept or deny application
+  static async handleClubApplication(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id, appId } = req.params;
+      const { action } = req.body; // "accept" or "deny"
+      const userId = req.user!.id;
+
+      // Only club creator or admin can act
+      const club = await pool.query("SELECT * FROM clubs WHERE id = $1", [id]);
+      if (!club.rows.length || (club.rows[0].creator_id !== userId && req.user!.role !== "admin")) {
+        return res.status(403).json({ success: false, message: "Forbidden" });
+      }
+
+      const appRes = await pool.query("SELECT * FROM club_applications WHERE id = $1 AND club_id = $2", [appId, id]);
+      if (!appRes.rows.length) return res.status(404).json({ success: false, message: "Application not found" });
+      const application = appRes.rows[0];
+
+      if (application.status !== "pending") {
+        return res.status(400).json({ success: false, message: "Already processed" });
+      }
+
+      // Update status
+      await pool.query("UPDATE club_applications SET status = $1 WHERE id = $2", [action, appId]);
+
+      // Fetch applicant email
+      const userRes = await pool.query("SELECT email FROM users WHERE id = $1", [application.user_id]);
+      const email = userRes.rows[0]?.email;
+
+      if (action === "accept") {
+        // Add to club_members
+        await pool.query(
+          "INSERT INTO club_members (club_id, user_id, role) VALUES ($1, $2, 'member') ON CONFLICT DO NOTHING",
+          [id, application.user_id]
+        );
+        // Email accepted
+        await sendEmail(
+          email,
+          `Accepted to ${club.rows[0].name}`,
+          `You have been accepted to the club "${club.rows[0].name}".`,
+          `<p>You have been accepted to the club <b>${club.rows[0].name}</b>.</p>`
+        );
+      } else if (action === "deny") {
+        // Email denied
+        await sendEmail(
+          email,
+          `Application Denied for ${club.rows[0].name}`,
+          `Your application to "${club.rows[0].name}" was denied.`,
+          `<p>Your application to <b>${club.rows[0].name}</b> was denied.</p>`
+        );
+      }
+
+      return res.json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: "Failed to process application" });
     }
   }
 }

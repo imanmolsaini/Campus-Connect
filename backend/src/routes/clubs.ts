@@ -18,6 +18,12 @@ router.post("/", authenticateToken, requireVerified, validate(createClubSchema),
 router.delete("/:id", authenticateToken, ClubController.deleteClub)
 
 // Apply to a club
-router.post("/apply/:id", ClubController.applyToClub);
+router.post("/apply/:id", authenticateToken, ClubController.applyToClub);
+
+// Get pending applications for a club (admin/creator only)
+router.get("/:id/applications", authenticateToken, ClubController.getClubApplications);
+
+// Accept/deny application
+router.post("/:id/applications/:appId", authenticateToken, ClubController.handleClubApplication);
 
 export default router

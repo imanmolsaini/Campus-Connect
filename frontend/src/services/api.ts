@@ -534,6 +534,15 @@ export const clubAPI = {
     const response = await api.post(`/clubs/apply/${clubId}`, form);
     return response.data;
   },
+
+  getClubApplications: async (clubId: string) => {
+    const response = await api.get(`/clubs/${clubId}/applications`);
+    return response.data;
+  },
+  handleClubApplication: async (clubId: string, appId: string, action: "accept" | "deny") => {
+    const response = await api.post(`/clubs/${clubId}/applications/${appId}`, { action });
+    return response.data;
+  },
 }
 export default api
 //view button 

@@ -328,3 +328,15 @@ export interface ClubPost {
   updated_at: string
   author_name?: string
 }
+
+export interface ClubApplication {
+  id: string;
+  club_id: string;
+  user_id: string;
+  name: string;
+  student_id: string;
+  reason: string;
+  status: string;
+  created_at: string;
+  email?: string;
+}

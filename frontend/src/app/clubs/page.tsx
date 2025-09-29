@@ -14,7 +14,7 @@ import { Club } from '@/types';
 import { Users, PlusCircle, Search, Link as LinkIcon, MapPin, Calendar, Clock } from 'lucide-react';
 import { Trash2 } from "lucide-react";
 import { ClubDetailsModal } from "@/components/clubs/ClubDetailsModal";
-
+import ClubApplicationsModal from "@/components/clubs/ClubApplicationsModal";
 // UPDATED: Refactored meeting_date to club_date and meeting_time to club_time
 interface ClubForm {
   name: string;
@@ -33,6 +33,7 @@ export default function ClubsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
+  const [applicationsClubId, setApplicationsClubId] = useState<string | null>(null);
 
   const {
     register,
@@ -238,24 +239,33 @@ export default function ClubsPage() {
                 </Button>
                 {/* Delete Button - only show if user is admin or club creator */}
                 {(user?.role === "admin" || user?.id === club.creator_id) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={async () => {
-                      if (window.confirm("Are you sure you want to delete this club?")) {
-                        try {
-                          await clubAPI.deleteClub(club.id);
-                          toast.success("Club deleted!");
-                          loadClubs();
-                        } catch (error) {
-                          toast.error("Failed to delete club.");
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setApplicationsClubId(club.id)}
+                    >
+                      Applications
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        if (window.confirm("Are you sure you want to delete this club?")) {
+                          try {
+                            await clubAPI.deleteClub(club.id);
+                            toast.success("Club deleted!");
+                            loadClubs();
+                          } catch (error) {
+                            toast.error("Failed to delete club.");
+                          }
                         }
-                      }
-                    }}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                      }}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </>
                 )}
               </div>
             </Card>
@@ -275,6 +285,12 @@ export default function ClubsPage() {
           clubId={selectedClubId}
           open={!!selectedClubId}
           onClose={() => setSelectedClubId(null)}
+        />
+
+        <ClubApplicationsModal
+          clubId={applicationsClubId}
+          open={!!applicationsClubId}
+          onClose={() => setApplicationsClubId(null)}
         />
       </div>
     </Layout>
