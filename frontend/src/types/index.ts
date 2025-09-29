@@ -300,7 +300,6 @@ export interface Club {
   club_date?: string
   club_time?: string
   image_url?: string
-  join_link?: string
   members_count: number
   is_active: boolean
   created_at: string

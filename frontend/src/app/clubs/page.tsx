@@ -23,7 +23,6 @@ interface ClubForm {
   club_date?: string;
   club_time?: string;
   image_url?: string;
-  join_link?: string;
 }
 
 export default function ClubsPage() {
@@ -182,17 +181,7 @@ export default function ClubsPage() {
                   />
                 </div>
 
-                {/* Link to Join field */}
-                <div className="md:col-span-2">
-                  <Input
-                    label="Link to Join"
-                    type="url"
-                    {...register("join_link")}
-                    error={errors.join_link?.message}
-                    placeholder="https://chat.whatsapp.com/your-club-link"
-                    icon={<LinkIcon className="w-4 h-4 text-gray-400" />}
-                  />
-                </div>
+                
 
                 <div className="md:col-span-2">
                   <Input
