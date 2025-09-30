@@ -51,11 +51,6 @@ export function ClubDetailsModal({ clubId, open, onClose }: ClubDetailsModalProp
               <div><strong>Time:</strong> {club.club_time || "N/A"}</div>
               <div><strong>Contact:</strong> {club.contact_email || "N/A"}</div>
               <div><strong>Members:</strong> {club.members_count || 0}</div>
-              <div><strong>Join Link:</strong> {club.join_link ? (
-                <a href={club.join_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                  {club.join_link}
-                </a>
-              ) : "N/A"}</div>
               {club.image_url && (
                 <div className="mt-2">
                   <img src={club.image_url} alt={club.name} className="max-h-40 rounded" />
