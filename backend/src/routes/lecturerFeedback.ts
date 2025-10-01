@@ -1,21 +1,22 @@
-import { Router } from 'express';
-import { LecturerFeedbackController } from '@/controllers/lecturerFeedbackController';
-import { authenticateToken, requireVerified } from '@/middleware/auth';
-import { validate, createLecturerFeedbackSchema } from '@/middleware/validation';
+import { Router } from "express"
+import { LecturerFeedbackController } from "@/controllers/lecturerFeedbackController"
+import { authenticateToken, requireVerified } from "@/middleware/auth"
+import { validate, createLecturerFeedbackSchema } from "@/middleware/validation"
 
-const router = Router();
+const router = Router()
 
 // Public routes
-router.get('/', LecturerFeedbackController.getLecturerFeedback);
+router.get("/", LecturerFeedbackController.getLecturerFeedback)
 
 // Protected routes
 router.post(
-  '/',
+  "/",
   authenticateToken,
   requireVerified,
   validate(createLecturerFeedbackSchema),
-  LecturerFeedbackController.createLecturerFeedback
-);
-router.get('/my-feedback', authenticateToken, LecturerFeedbackController.getUserLecturerFeedback);
+  LecturerFeedbackController.createLecturerFeedback,
+)
+router.get("/my-feedback", authenticateToken, LecturerFeedbackController.getUserLecturerFeedback)
+router.delete("/:id", authenticateToken, LecturerFeedbackController.deleteLecturerFeedback)
 
-export default router;
+export default router
