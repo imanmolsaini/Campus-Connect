@@ -304,6 +304,10 @@ export const lecturerFeedbackAPI = {
     )
     return response.data
   },
+  deleteFeedback: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/lecturer-feedback/${id}`)
+    return response.data
+  },
 }
 
 // Quote API

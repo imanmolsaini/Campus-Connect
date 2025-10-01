@@ -1,12 +1,12 @@
-import { Request, Response } from 'express';
-import pool from '@/config/database';
-import { AuthenticatedRequest, ApiResponse, CreateLecturerFeedbackRequest } from '@/types';
+import type { Request, Response } from "express"
+import pool from "@/config/database"
+import type { AuthenticatedRequest, ApiResponse, CreateLecturerFeedbackRequest } from "@/types"
 
 export class LecturerFeedbackController {
   static async getLecturerFeedback(req: Request, res: Response<ApiResponse>): Promise<void> {
     try {
-      const { lecturer_id, course_id, limit = '10', offset = '0' } = req.query;
-      
+      const { lecturer_id, course_id, limit = "10", offset = "0" } = req.query
+
       let query = `
         SELECT 
           lf.*,
@@ -21,59 +21,59 @@ export class LecturerFeedbackController {
         JOIN users u ON lf.user_id = u.id
         LEFT JOIN lecturers l ON lf.lecturer_id = l.id -- Join with lecturers table
         LEFT JOIN courses c ON lf.course_id = c.id
-      `;
-      
-      const conditions: string[] = [];
-      const values: any[] = [];
-      let paramCount = 0;
+      `
+
+      const conditions: string[] = []
+      const values: any[] = []
+      let paramCount = 0
 
       if (lecturer_id) {
-        paramCount++;
-        conditions.push(`lf.lecturer_id = $${paramCount}`);
-        values.push(lecturer_id);
+        paramCount++
+        conditions.push(`lf.lecturer_id = $${paramCount}`)
+        values.push(lecturer_id)
       }
 
       if (course_id) {
-        paramCount++;
-        conditions.push(`lf.course_id = $${paramCount}`);
-        values.push(course_id);
+        paramCount++
+        conditions.push(`lf.course_id = $${paramCount}`)
+        values.push(course_id)
       }
 
       if (conditions.length > 0) {
-        query += ` WHERE ${conditions.join(' AND ')}`;
+        query += ` WHERE ${conditions.join(" AND ")}`
       }
 
-      query += ` ORDER BY lf.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
-      values.push(parseInt(limit as string), parseInt(offset as string));
+      query += ` ORDER BY lf.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`
+      values.push(Number.parseInt(limit as string), Number.parseInt(offset as string))
 
-      const result = await pool.query(query, values);
+      const result = await pool.query(query, values)
 
       // Map lecturer_name_from_table to lecturer_name if lecturer_id is present
-      const feedbackData = result.rows.map(row => ({
+      const feedbackData = result.rows.map((row) => ({
         ...row,
         lecturer_name: row.lecturer_name_from_table || row.lecturer_name, // Prefer name from lecturers table
-      }));
+      }))
 
       res.json({
         success: true,
-        message: 'Lecturer feedback retrieved successfully',
+        message: "Lecturer feedback retrieved successfully",
         data: {
           feedback: feedbackData,
           total: result.rows.length,
         },
-      });
+      })
     } catch (error) {
-      console.error('Get lecturer feedback error:', error);
+      console.error("Get lecturer feedback error:", error)
       res.status(500).json({
         success: false,
-        message: 'Internal server error',
-      });
+        message: "Internal server error",
+      })
     }
   }
 
   static async createLecturerFeedback(req: AuthenticatedRequest, res: Response<ApiResponse>): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = req.user!.id
       const {
         lecturer_id,
         lecturer_name, // Kept for initial seeding/fallback
@@ -84,54 +84,53 @@ export class LecturerFeedbackController {
         teaching_quality,
         communication_rating,
         availability_rating,
-      } = req.body as CreateLecturerFeedbackRequest;
+      } = req.body as CreateLecturerFeedbackRequest
 
-      let finalLecturerId = lecturer_id;
-      let finalLecturerName = lecturer_name;
+      let finalLecturerId = lecturer_id
+      let finalLecturerName = lecturer_name
 
       // If lecturer_id is not provided, try to find or create lecturer by name
       if (!finalLecturerId && finalLecturerName) {
-        let lecturerResult = await pool.query('SELECT id FROM lecturers WHERE name = $1', [finalLecturerName]);
+        const lecturerResult = await pool.query("SELECT id FROM lecturers WHERE name = $1", [finalLecturerName])
         if (lecturerResult.rows.length === 0) {
           // If lecturer doesn't exist, create a new one (only if user is admin, or allow non-admin to create basic entry)
           // For simplicity, let's allow any verified user to create a basic lecturer entry if it doesn't exist
-          const newLecturerResult = await pool.query(
-            `INSERT INTO lecturers (name) VALUES ($1) RETURNING id`,
-            [finalLecturerName]
-          );
-          finalLecturerId = newLecturerResult.rows[0].id;
+          const newLecturerResult = await pool.query(`INSERT INTO lecturers (name) VALUES ($1) RETURNING id`, [
+            finalLecturerName,
+          ])
+          finalLecturerId = newLecturerResult.rows[0].id
         } else {
-          finalLecturerId = lecturerResult.rows[0].id;
+          finalLecturerId = lecturerResult.rows[0].id
         }
       } else if (finalLecturerId) {
         // If ID is provided, fetch name for consistency/display
-        const lecturerResult = await pool.query('SELECT name FROM lecturers WHERE id = $1', [finalLecturerId]);
+        const lecturerResult = await pool.query("SELECT name FROM lecturers WHERE id = $1", [finalLecturerId])
         if (lecturerResult.rows.length > 0) {
-          finalLecturerName = lecturerResult.rows[0].name;
+          finalLecturerName = lecturerResult.rows[0].name
         } else {
           res.status(400).json({
             success: false,
-            message: 'Invalid lecturer ID provided',
-          });
-          return;
+            message: "Invalid lecturer ID provided",
+          })
+          return
         }
       } else {
         res.status(400).json({
           success: false,
-          message: 'Lecturer ID or Name is required',
-        });
-        return;
+          message: "Lecturer ID or Name is required",
+        })
+        return
       }
 
       // Verify course exists if provided
       if (course_id) {
-        const courseResult = await pool.query('SELECT id FROM courses WHERE id = $1', [course_id]);
+        const courseResult = await pool.query("SELECT id FROM courses WHERE id = $1", [course_id])
         if (courseResult.rows.length === 0) {
           res.status(400).json({
             success: false,
-            message: 'Invalid course ID',
-          });
-          return;
+            message: "Invalid course ID",
+          })
+          return
         }
       }
 
@@ -153,28 +152,28 @@ export class LecturerFeedbackController {
           teaching_quality,
           communication_rating,
           availability_rating,
-        ]
-      );
+        ],
+      )
 
-      const feedback = result.rows[0];
+      const feedback = result.rows[0]
 
       res.status(201).json({
         success: true,
-        message: 'Lecturer feedback created successfully',
+        message: "Lecturer feedback created successfully",
         data: { feedback },
-      });
+      })
     } catch (error) {
-      console.error('Create lecturer feedback error:', error);
+      console.error("Create lecturer feedback error:", error)
       res.status(500).json({
         success: false,
-        message: 'Internal server error',
-      });
+        message: "Internal server error",
+      })
     }
   }
 
   static async getUserLecturerFeedback(req: AuthenticatedRequest, res: Response<ApiResponse>): Promise<void> {
     try {
-      const userId = req.user!.id;
+      const userId = req.user!.id
 
       const result = await pool.query(
         `SELECT 
@@ -187,28 +186,79 @@ export class LecturerFeedbackController {
         LEFT JOIN courses c ON lf.course_id = c.id
         WHERE lf.user_id = $1
         ORDER BY lf.created_at DESC`,
-        [userId]
-      );
+        [userId],
+      )
 
-      const feedbackData = result.rows.map(row => ({
+      const feedbackData = result.rows.map((row) => ({
         ...row,
         lecturer_name: row.lecturer_name_from_table || row.lecturer_name,
-      }));
+      }))
 
       res.json({
         success: true,
-        message: 'User lecturer feedback retrieved successfully',
+        message: "User lecturer feedback retrieved successfully",
         data: {
           feedback: feedbackData,
           total: result.rows.length,
         },
-      });
+      })
     } catch (error) {
-      console.error('Get user lecturer feedback error:', error);
+      console.error("Get user lecturer feedback error:", error)
       res.status(500).json({
         success: false,
-        message: 'Internal server error',
-      });
+        message: "Internal server error",
+      })
+    }
+  }
+
+  static async deleteLecturerFeedback(req: AuthenticatedRequest, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const { id } = req.params
+      const userId = req.user!.id
+      const userRole = req.user!.role
+
+      // Get feedback details
+      const feedbackResult = await pool.query(
+        `SELECT lf.*, l.name as lecturer_name, u.name as reviewer_name 
+         FROM lecturer_feedback lf 
+         LEFT JOIN lecturers l ON lf.lecturer_id = l.id 
+         JOIN users u ON lf.user_id = u.id 
+         WHERE lf.id = $1`,
+        [id],
+      )
+
+      if (feedbackResult.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          message: "Feedback not found",
+        })
+        return
+      }
+
+      const feedback = feedbackResult.rows[0]
+
+      // Check if user can delete this feedback (own feedback or admin)
+      if (feedback.user_id !== userId && userRole !== "admin") {
+        res.status(403).json({
+          success: false,
+          message: "You can only delete your own feedback",
+        })
+        return
+      }
+
+      // Delete feedback
+      await pool.query("DELETE FROM lecturer_feedback WHERE id = $1", [id])
+
+      res.json({
+        success: true,
+        message: `Feedback for ${feedback.lecturer_name || "lecturer"} deleted successfully`,
+      })
+    } catch (error) {
+      console.error("Delete lecturer feedback error:", error)
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      })
     }
   }
 }

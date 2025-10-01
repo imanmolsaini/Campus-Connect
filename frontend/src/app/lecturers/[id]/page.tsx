@@ -1,30 +1,31 @@
-'use client';
+"use client"
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import toast from 'react-hot-toast';
-import { Layout } from '@/components/layout/Layout';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card } from '@/components/ui/Card';
-import { useRequireAuth } from '@/hooks/useRequireAuth';
-import { lecturerAPI, lecturerFeedbackAPI, courseAPI } from '@/services/api';
-import { Lecturer, LecturerFeedback, Quote, LecturerFeedbackForm, Course } from '@/types';
-import { Star, MessageSquare, QuoteIcon, BookOpen, User, PlusCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { RatingStars } from '@/components/ui/RatingStars';
+import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
+import { useForm } from "react-hook-form"
+import toast from "react-hot-toast"
+import { Layout } from "@/components/layout/Layout"
+import { Button } from "@/components/ui/Button"
+import { Input } from "@/components/ui/Input"
+import { Card } from "@/components/ui/Card"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
+import { lecturerAPI, lecturerFeedbackAPI, courseAPI } from "@/services/api"
+import type { Lecturer, LecturerFeedback, Quote, LecturerFeedbackForm, Course } from "@/types"
+import { Star, MessageSquare, QuoteIcon, User, PlusCircle, Trash2 } from "lucide-react"
+import { format } from "date-fns"
+import { RatingStars } from "@/components/ui/RatingStars"
 
 export default function LecturerDetailPage() {
-  const { id } = useParams();
-  const { user, loading: authLoading } = useRequireAuth(true);
-  const [lecturer, setLecturer] = useState<Lecturer | null>(null);
-  const [feedback, setFeedback] = useState<LecturerFeedback[]>([]);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
-  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const { id } = useParams()
+  const { user, loading: authLoading } = useRequireAuth(true)
+  const [lecturer, setLecturer] = useState<Lecturer | null>(null)
+  const [feedback, setFeedback] = useState<LecturerFeedback[]>([])
+  const [quotes, setQuotes] = useState<Quote[]>([])
+  const [courses, setCourses] = useState<Course[]>([])
+  const [loadingData, setLoadingData] = useState(true)
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false)
+  const [deletingFeedbackId, setDeletingFeedbackId] = useState<string | null>(null)
 
   const {
     register,
@@ -33,71 +34,88 @@ export default function LecturerDetailPage() {
     formState: { errors },
     setValue,
     watch,
-  } = useForm<LecturerFeedbackForm>();
+  } = useForm<LecturerFeedbackForm>()
 
-  const selectedRating = watch('rating');
+  const selectedRating = watch("rating")
 
   useEffect(() => {
     if (id) {
-      loadLecturerData(id as string);
+      loadLecturerData(id as string)
     }
-  }, [id]);
+  }, [id])
 
   const loadLecturerData = async (lecturerId: string) => {
-    setLoadingData(true);
+    setLoadingData(true)
     try {
-      const [lecturerRes, coursesRes] = await Promise.all([
-        lecturerAPI.getLecturer(lecturerId),
-        courseAPI.getCourses(),
-      ]);
+      const [lecturerRes, coursesRes] = await Promise.all([lecturerAPI.getLecturer(lecturerId), courseAPI.getCourses()])
 
       if (lecturerRes.success && lecturerRes.data) {
-        setLecturer(lecturerRes.data.lecturer);
-        setFeedback(lecturerRes.data.recent_feedback);
-        setQuotes(lecturerRes.data.recent_quotes);
+        setLecturer(lecturerRes.data.lecturer)
+        setFeedback(lecturerRes.data.recent_feedback)
+        setQuotes(lecturerRes.data.recent_quotes)
       } else {
-        toast.error(lecturerRes.message || 'Failed to load lecturer details.');
+        toast.error(lecturerRes.message || "Failed to load lecturer details.")
       }
 
-      if (coursesRes.success) {
-        setCourses(coursesRes.data.courses);
+      if (coursesRes.success && coursesRes.data) {
+        setCourses(coursesRes.data.courses)
       }
-
     } catch (error) {
-      console.error('Failed to load lecturer data:', error);
-      toast.error('Failed to load lecturer data.');
+      console.error("Failed to load lecturer data:", error)
+      toast.error("Failed to load lecturer data.")
     } finally {
-      setLoadingData(false);
+      setLoadingData(false)
     }
-  };
+  }
 
   const onSubmitFeedback = async (data: LecturerFeedbackForm) => {
-    setIsSubmittingFeedback(true);
+    setIsSubmittingFeedback(true)
     try {
       const response = await lecturerFeedbackAPI.createFeedback({
         ...data,
-        lecturer_id: lecturer?.id, // Ensure lecturer_id is passed
+        lecturer_id: lecturer?.id,
         rating: Number(data.rating),
         anonymous: data.anonymous || false,
         teaching_quality: data.teaching_quality ? Number(data.teaching_quality) : undefined,
         communication_rating: data.communication_rating ? Number(data.communication_rating) : undefined,
         availability_rating: data.availability_rating ? Number(data.availability_rating) : undefined,
-      });
+      })
 
       if (response.success && response.data) {
-        toast.success('Feedback submitted successfully!');
-        reset();
-        setShowFeedbackForm(false);
-        if (lecturer?.id) loadLecturerData(lecturer.id); // Reload data
+        toast.success("Feedback submitted successfully!")
+        reset()
+        setShowFeedbackForm(false)
+        if (lecturer?.id) loadLecturerData(lecturer.id)
       } else {
-        toast.error(response.message || 'Failed to submit feedback.');
+        toast.error(response.message || "Failed to submit feedback.")
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to submit feedback.');
+      toast.error(error.response?.data?.message || "Failed to submit feedback.")
     } finally {
-      setIsSubmittingFeedback(false);
+      setIsSubmittingFeedback(false)
     }
-  };
+  }
+
+  const handleDeleteFeedback = async (feedbackId: string) => {
+    if (!confirm("Are you sure you want to delete this feedback?")) {
+      return
+    }
+
+    setDeletingFeedbackId(feedbackId)
+    try {
+      const response = await lecturerFeedbackAPI.deleteFeedback(feedbackId)
+      if (response.success) {
+        toast.success("Feedback deleted successfully!")
+        if (lecturer?.id) loadLecturerData(lecturer.id)
+      } else {
+        toast.error(response.message || "Failed to delete feedback.")
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to delete feedback.")
+    } finally {
+      setDeletingFeedbackId(null)
+    }
+  }
 
   if (authLoading || loadingData) {
     return (
@@ -107,7 +125,7 @@ export default function LecturerDetailPage() {
           <div className="h-64 bg-gray-200 rounded-lg"></div>
         </div>
       </Layout>
-    );
+    )
   }
 
   if (!lecturer) {
@@ -115,15 +133,11 @@ export default function LecturerDetailPage() {
       <Layout>
         <Card className="text-center py-12">
           <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Lecturer not found
-          </h3>
-          <p className="text-gray-600">
-            The lecturer you are looking for does not exist.
-          </p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Lecturer not found</h3>
+          <p className="text-gray-600">The lecturer you are looking for does not exist.</p>
         </Card>
       </Layout>
-    );
+    )
   }
 
   return (
@@ -132,19 +146,13 @@ export default function LecturerDetailPage() {
         {/* Lecturer Profile Header */}
         <Card className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8 p-8">
           <img
-            src={lecturer.profile_image_url || '/placeholder.svg?height=160&width=120&query=default lecturer profile'}
+            src={lecturer.profile_image_url || "/placeholder.svg?height=160&width=120&query=default lecturer profile"}
             alt={lecturer.name}
             className="w-[120px] h-[160px] object-cover rounded-md border-4 border-primary-200 shadow-md"
           />
           <div className="text-center md:text-left flex-1">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              {lecturer.name}
-            </h1>
-            {lecturer.description && (
-              <p className="text-gray-700 text-lg mb-4">
-                {lecturer.description}
-              </p>
-            )}
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">{lecturer.name}</h1>
+            {lecturer.description && <p className="text-gray-700 text-lg mb-4">{lecturer.description}</p>}
             <div className="flex flex-wrap justify-center md:justify-start items-center gap-x-6 gap-y-2 text-gray-600 text-sm">
               <div className="flex items-center space-x-1">
                 <MessageSquare className="w-4 h-4 text-primary-500" />
@@ -154,7 +162,7 @@ export default function LecturerDetailPage() {
                 <QuoteIcon className="w-4 h-4 text-purple-500" />
                 <span>{lecturer.quote_count} Quotes</span>
               </div>
-              {typeof lecturer.avg_feedback_rating === 'number' && lecturer.avg_feedback_rating > 0 ? (
+              {typeof lecturer.avg_feedback_rating === "number" && lecturer.avg_feedback_rating > 0 ? (
                 <div className="flex items-center space-x-1 text-yellow-600">
                   <RatingStars rating={lecturer.avg_feedback_rating} size={16} />
                   <span>{lecturer.avg_feedback_rating.toFixed(1)} Avg. Rating</span>
@@ -170,7 +178,7 @@ export default function LecturerDetailPage() {
         <div className="flex justify-end">
           <Button onClick={() => setShowFeedbackForm(!showFeedbackForm)}>
             <PlusCircle className="w-4 h-4 mr-2" />
-            {showFeedbackForm ? 'Hide Feedback Form' : 'Give Feedback'}
+            {showFeedbackForm ? "Hide Feedback Form" : "Give Feedback"}
           </Button>
         </div>
 
@@ -180,23 +188,22 @@ export default function LecturerDetailPage() {
             <form onSubmit={handleSubmit(onSubmitFeedback)} className="space-y-6">
               {/* Overall Rating */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Overall Rating (1-5 Stars)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Overall Rating (1-5 Stars)</label>
                 <div className="flex items-center space-x-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`cursor-pointer ${selectedRating && star <= selectedRating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                      className={`cursor-pointer ${selectedRating && star <= selectedRating ? "text-yellow-400 fill-current" : "text-gray-300"}`}
                       size={24}
-                      onClick={() => setValue('rating', star, { shouldValidate: true })}
+                      onClick={() => setValue("rating", star, { shouldValidate: true })}
                     />
                   ))}
                 </div>
-                <input type="hidden" {...register('rating', { required: 'Overall rating is required', min: 1, max: 5 })} />
-                {errors.rating && (
-                  <p className="mt-1 text-sm text-red-600">{errors.rating.message}</p>
-                )}
+                <input
+                  type="hidden"
+                  {...register("rating", { required: "Overall rating is required", min: 1, max: 5 })}
+                />
+                {errors.rating && <p className="mt-1 text-sm text-red-600">{errors.rating.message}</p>}
               </div>
 
               {/* Additional Ratings */}
@@ -204,21 +211,21 @@ export default function LecturerDetailPage() {
                 <Input
                   label="Teaching Quality (1-5)"
                   type="number"
-                  {...register('teaching_quality', { min: 1, max: 5, valueAsNumber: true })}
+                  {...register("teaching_quality", { min: 1, max: 5, valueAsNumber: true })}
                   error={errors.teaching_quality?.message}
                   placeholder="e.g., 4"
                 />
                 <Input
                   label="Communication (1-5)"
                   type="number"
-                  {...register('communication_rating', { min: 1, max: 5, valueAsNumber: true })}
+                  {...register("communication_rating", { min: 1, max: 5, valueAsNumber: true })}
                   error={errors.communication_rating?.message}
                   placeholder="e.g., 5"
                 />
                 <Input
                   label="Availability (1-5)"
                   type="number"
-                  {...register('availability_rating', { min: 1, max: 5, valueAsNumber: true })}
+                  {...register("availability_rating", { min: 1, max: 5, valueAsNumber: true })}
                   error={errors.availability_rating?.message}
                   placeholder="e.g., 3"
                 />
@@ -226,11 +233,9 @@ export default function LecturerDetailPage() {
 
               {/* Course Selection (Optional) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Related Course (Optional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Related Course (Optional)</label>
                 <select
-                  {...register('course_id')}
+                  {...register("course_id")}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                 >
                   <option value="">Select a course...</option>
@@ -240,25 +245,19 @@ export default function LecturerDetailPage() {
                     </option>
                   ))}
                 </select>
-                {errors.course_id && (
-                  <p className="mt-1 text-sm text-red-600">{errors.course_id.message}</p>
-                )}
+                {errors.course_id && <p className="mt-1 text-sm text-red-600">{errors.course_id.message}</p>}
               </div>
 
               {/* Comment */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Comment (Optional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Comment (Optional)</label>
                 <textarea
-                  {...register('comment', { maxLength: { value: 1000, message: 'Comment too long' } })}
+                  {...register("comment", { maxLength: { value: 1000, message: "Comment too long" } })}
                   rows={4}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                   placeholder="Share your thoughts on the lecturer..."
                 />
-                {errors.comment && (
-                  <p className="mt-1 text-sm text-red-600">{errors.comment.message}</p>
-                )}
+                {errors.comment && <p className="mt-1 text-sm text-red-600">{errors.comment.message}</p>}
               </div>
 
               {/* Anonymous Checkbox */}
@@ -266,7 +265,7 @@ export default function LecturerDetailPage() {
                 <input
                   id="anonymous-feedback"
                   type="checkbox"
-                  {...register('anonymous')}
+                  {...register("anonymous")}
                   className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                 />
                 <label htmlFor="anonymous-feedback" className="ml-2 block text-sm text-gray-900">
@@ -302,29 +301,32 @@ export default function LecturerDetailPage() {
                     <RatingStars rating={f.rating} size={20} />
                     <span className="text-lg font-semibold text-gray-900">{f.rating}/5</span>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {format(new Date(f.created_at), 'MMM d, yyyy')}
-                  </span>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-500">{format(new Date(f.created_at), "MMM d, yyyy")}</span>
+                    {user && (user.id === f.user_id || user.role === "admin") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteFeedback(f.id)}
+                        loading={deletingFeedbackId === f.id}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 {f.course_name && (
                   <h3 className="text-md font-medium text-gray-800 mb-2">
                     Related to: {f.course_code} - {f.course_name}
                   </h3>
                 )}
-                {f.comment && (
-                  <p className="text-gray-700 mb-3">{f.comment}</p>
-                )}
+                {f.comment && <p className="text-gray-700 mb-3">{f.comment}</p>}
                 <div className="text-sm text-gray-600 flex items-center space-x-4">
-                  <span>By {f.anonymous ? 'Anonymous' : f.reviewer_name}</span>
-                  {f.teaching_quality && (
-                    <span>• Teaching Quality: {f.teaching_quality}/5</span>
-                  )}
-                  {f.communication_rating && (
-                    <span>• Communication: {f.communication_rating}/5</span>
-                  )}
-                  {f.availability_rating && (
-                    <span>• Availability: {f.availability_rating}/5</span>
-                  )}
+                  <span>By {f.anonymous ? "Anonymous" : f.reviewer_name}</span>
+                  {f.teaching_quality && <span>• Teaching Quality: {f.teaching_quality}/5</span>}
+                  {f.communication_rating && <span>• Communication: {f.communication_rating}/5</span>}
+                  {f.availability_rating && <span>• Availability: {f.availability_rating}/5</span>}
                 </div>
               </Card>
             ))
@@ -343,13 +345,13 @@ export default function LecturerDetailPage() {
             quotes.map((quote) => (
               <Card key={quote.id} className="p-6">
                 <blockquote className="text-xl italic text-gray-800 mb-3 relative pl-8">
-                  <span className="absolute left-0 top-0 text-primary-400 text-5xl font-serif leading-none">“</span>
+                  <span className="absolute left-0 top-0 text-primary-400 text-5xl font-serif leading-none">"</span>
                   {quote.quote_text}
                 </blockquote>
                 <div className="text-sm text-gray-600 text-right">
                   — {quote.lecturer_name}
                   {quote.context && <span className="ml-2">({quote.context})</span>}
-                  <span className="ml-2">• {format(new Date(quote.created_at), 'MMM d, yyyy')}</span>
+                  <span className="ml-2">• {format(new Date(quote.created_at), "MMM d, yyyy")}</span>
                 </div>
               </Card>
             ))
@@ -357,5 +359,5 @@ export default function LecturerDetailPage() {
         </div>
       </div>
     </Layout>
-  );
+  )
 }
