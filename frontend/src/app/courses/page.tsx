@@ -137,6 +137,8 @@ export default function CoursesPage() {
     { value: "4", label: "Year 4" },
   ]
 
+  const activeFilterCount = [searchTerm, selectedFaculty, selectedYear].filter(Boolean).length
+
   return (
     <Layout>
       <div className="space-y-8">
@@ -255,56 +257,189 @@ export default function CoursesPage() {
           </Card>
         )}
 
-        {/* Filters */}
-        <Card>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search courses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        <Card className="bg-gradient-to-br from-white to-gray-50 border-gray-200 shadow-md">
+          <div className="space-y-4">
+            {/* Filter Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-primary-100 rounded-lg">
+                  <Filter className="w-5 h-5 text-primary-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Filter Courses</h3>
+                  <p className="text-xs text-gray-500">Refine your search results</p>
+                </div>
+              </div>
+              {activeFilterCount > 0 && (
+                <div className="flex items-center space-x-2">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 animate-pulse">
+                    {activeFilterCount} active {activeFilterCount === 1 ? "filter" : "filters"}
+                  </span>
+                </div>
+              )}
             </div>
 
-            <select
-              value={selectedFaculty}
-              onChange={(e) => setSelectedFaculty(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-            >
-              <option value="">All Faculties</option>
-              {faculties.map((faculty) => (
-                <option key={faculty.value} value={faculty.value}>
-                  {faculty.label}
-                </option>
-              ))}
-            </select>
+            {/* Filter Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Search Input */}
+              <div className="relative group">
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Search</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 group-hover:text-primary-500 transition-colors" />
+                  <Input
+                    placeholder="Course name or code..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-white hover:border-primary-300 focus:border-primary-500 transition-all"
+                  />
+                </div>
+              </div>
 
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-            >
-              <option value="">All Years</option>
-              {years.map((year) => (
-                <option key={year.value} value={year.value}>
-                  {year.label}
-                </option>
-              ))}
-            </select>
+              {/* Faculty Dropdown */}
+              <div className="relative group">
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Faculty</label>
+                <div className="relative">
+                  <BookOpen className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none group-hover:text-primary-500 transition-colors z-10" />
+                  <select
+                    value={selectedFaculty}
+                    onChange={(e) => setSelectedFaculty(e.target.value)}
+                    className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm bg-white hover:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="">All Faculties</option>
+                    {faculties.map((faculty) => (
+                      <option key={faculty.value} value={faculty.value}>
+                        {faculty.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
 
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSearchTerm("")
-                setSelectedFaculty("")
-                setSelectedYear("")
-              }}
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Clear Filters
-            </Button>
+              {/* Year Dropdown */}
+              <div className="relative group">
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Year Level</label>
+                <div className="relative">
+                  <svg
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none group-hover:text-primary-500 transition-colors z-10"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md shadow-sm bg-white hover:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="">All Years</option>
+                    {years.map((year) => (
+                      <option key={year.value} value={year.value}>
+                        {year.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Clear Filters Button */}
+              <div className="flex items-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm("")
+                    setSelectedFaculty("")
+                    setSelectedYear("")
+                  }}
+                  className="w-full hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all group"
+                  disabled={activeFilterCount === 0}
+                >
+                  <svg
+                    className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Clear All
+                </Button>
+              </div>
+            </div>
+
+            {/* Active Filter Chips */}
+            {activeFilterCount > 0 && (
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                <span className="text-xs font-medium text-gray-500">Active filters:</span>
+                {searchTerm && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                    <Search className="w-3 h-3 mr-1" />
+                    Search: {searchTerm}
+                    <button onClick={() => setSearchTerm("")} className="ml-1.5 hover:text-blue-900">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+                {selectedFaculty && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                    <BookOpen className="w-3 h-3 mr-1" />
+                    {faculties.find((f) => f.value === selectedFaculty)?.label}
+                    <button onClick={() => setSelectedFaculty("")} className="ml-1.5 hover:text-purple-900">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+                {selectedYear && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Year {selectedYear}
+                    <button onClick={() => setSelectedYear("")} className="ml-1.5 hover:text-green-900">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </Card>
 
