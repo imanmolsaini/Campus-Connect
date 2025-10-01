@@ -17,9 +17,6 @@ import quoteRoutes from "@/routes/quotes" // NEW
 import dealRoutes from "@/routes/deals" // Added deals routes
 import jobRoutes from "@/routes/jobs" // Added jobs routes
 import eventRoutes from "@/routes/events" // Added events routes
-import cron from "node-cron";
-import pool from "./config/database";
-import { EmailService } from "./services/emailService";
 
 // Load environment variables
 dotenv.config()
@@ -113,31 +110,3 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 })
 
 export default app
-
-// Send reminders for events starting in the next 10 minutes
-cron.schedule("* * * * *", async () => {
-  try {
-    //selects the users that are interested in the event through getting the event time,id name and user emails 
-    //then getting those user emails that have the interested tag, then checking the event time to see if its within the next 10 minutes
-
-    const { rows: events } = await pool.query(`
-      SELECT e.id, e.event_name, e.event_time, u.email
-      FROM events e
-      JOIN event_interests ei ON ei.event_id = e.id AND ei.interest_type = 'interested'
-      JOIN users u ON u.id = ei.user_id
-      WHERE e.event_time BETWEEN NOW() + INTERVAL '10 minutes' AND NOW() + INTERVAL '11 minutes'
-        AND e.event_time > NOW()
-    `);
-    //if it is within that time it send the email
-    for (const event of events) {
-      await EmailService.sendReminderEmail(
-        event.email,
-        `Reminder: ${event.event_name} is starting soon!`,
-        `Hi,\n\nThis is a reminder that "${event.event_name}" will start at ${event.event_time}.\n\n`
-      );
-    }
-    //error handling for email service
-  } catch (err) {
-    console.error("Error sending event reminders:", err);
-  }
-});

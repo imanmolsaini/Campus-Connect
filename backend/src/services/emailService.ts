@@ -203,16 +203,6 @@ export class EmailService {
 
     await transporter.sendMail(mailOptions)
   }
-  // send the email for the reminder
-static async sendReminderEmail(email: string, subject: string, text: string): Promise<void> {
-    const mailOptions = {
-      from: `${process.env.FROM_NAME} <${process.env.FROM_EMAIL}>`,
-      to: email,
-      subject,
-      text,
-    };
-    await transporter.sendMail(mailOptions);
-  }
   
   static generateToken(): string {
     return uuidv4()
