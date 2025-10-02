@@ -217,31 +217,41 @@ export default function NotesPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {notes.map((note) => (
-              <Card key={note.id} className="hover:shadow-md transition-shadow">
-                <div className="p-6 space-y-4">
+              <Card
+                key={note.id}
+                className="group hover:shadow-xl transition-all duration-300 overflow-hidden border-0 bg-gradient-to-br from-white to-gray-50 relative"
+              >
+                {/* Decorative gradient overlay */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-100/50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                <div className="p-6 space-y-4 relative">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
+                      <div className="flex items-center space-x-2 mb-3">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(note.type)}`}
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${getTypeColor(note.type)}`}
                         >
                           {getTypeLabel(note.type)}
                         </span>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-sm">
                           {note.course_code}
                         </span>
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{note.title}</h3>
-                      <p className="text-sm text-gray-600">{note.course_name}</p>
+                      <h3 className="text-xl font-bold text-gray-900 line-clamp-2 group-hover:text-primary-600 transition-colors">
+                        {note.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 font-medium mt-1">{note.course_name}</p>
                     </div>
                     <div className="flex items-center space-x-2 flex-shrink-0">
-                      <FileText className="w-8 h-8 text-primary-600" />
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <FileText className="w-6 h-6 text-white" />
+                      </div>
                       {user && user.role === "admin" && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(note.id, note.title)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -249,24 +259,36 @@ export default function NotesPage() {
                     </div>
                   </div>
 
-                  {note.description && <p className="text-sm text-gray-600 line-clamp-3">{note.description}</p>}
-
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div>
-                      <p>By {note.uploader_name}</p>
-                      <p>{format(new Date(note.created_at), "MMM d, yyyy")}</p>
+                  {note.description && (
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                      <p className="text-sm text-gray-700 line-clamp-3">{note.description}</p>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center space-x-1">
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-900">By {note.uploader_name}</p>
+                      <p className="text-xs text-gray-500">{format(new Date(note.created_at), "MMM d, yyyy")}</p>
+                    </div>
+                    <div className="text-right space-y-1">
+                      <div className="flex items-center justify-end space-x-1.5 text-primary-600 font-semibold">
                         <Download className="w-4 h-4" />
-                        <span>{note.download_count}</span>
+                        <span className="text-sm">{note.download_count}</span>
                       </div>
-                      {note.file_size && <p className="text-xs">{(note.file_size / 1024 / 1024).toFixed(1)} MB</p>}
+                      {note.file_size && (
+                        <p className="text-xs text-gray-500 font-medium">
+                          {(note.file_size / 1024 / 1024).toFixed(1)} MB
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <Button onClick={() => handleDownload(note.id, note.title)} className="w-full" size="sm">
-                    <Download className="w-4 h-4 mr-2" />
+                  <Button
+                    onClick={() => handleDownload(note.id, note.title)}
+                    className="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-md hover:shadow-lg transition-all duration-300 group/btn"
+                    size="sm"
+                  >
+                    <Download className="w-4 h-4 mr-2 group-hover/btn:animate-bounce" />
                     Download
                   </Button>
                 </div>
