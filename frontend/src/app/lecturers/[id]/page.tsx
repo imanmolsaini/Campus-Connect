@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/Card"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { lecturerAPI, lecturerFeedbackAPI, courseAPI } from "@/services/api"
 import type { Lecturer, LecturerFeedback, Quote, LecturerFeedbackForm, Course } from "@/types"
-import { Star, MessageSquare, QuoteIcon, User, PlusCircle, Trash2 } from "lucide-react"
+import { Star, MessageSquare, QuoteIcon, User, PlusCircle, Trash2, Award, TrendingUp, Users } from "lucide-react"
 import { format } from "date-fns"
 import { RatingStars } from "@/components/ui/RatingStars"
 
@@ -67,6 +67,26 @@ export default function LecturerDetailPage() {
       setLoadingData(false)
     }
   }
+
+  const calculateCategoryAverages = () => {
+    const teachingRatings = feedback.filter((f) => f.teaching_quality).map((f) => f.teaching_quality!)
+    const communicationRatings = feedback.filter((f) => f.communication_rating).map((f) => f.communication_rating!)
+    const availabilityRatings = feedback.filter((f) => f.availability_rating).map((f) => f.availability_rating!)
+
+    return {
+      teaching: teachingRatings.length > 0 ? teachingRatings.reduce((a, b) => a + b, 0) / teachingRatings.length : null,
+      communication:
+        communicationRatings.length > 0
+          ? communicationRatings.reduce((a, b) => a + b, 0) / communicationRatings.length
+          : null,
+      availability:
+        availabilityRatings.length > 0
+          ? availabilityRatings.reduce((a, b) => a + b, 0) / availabilityRatings.length
+          : null,
+    }
+  }
+
+  const categoryAverages = calculateCategoryAverages()
 
   const onSubmitFeedback = async (data: LecturerFeedbackForm) => {
     setIsSubmittingFeedback(true)
@@ -285,52 +305,176 @@ export default function LecturerDetailPage() {
           </Card>
         )}
 
-        {/* Recent Feedback */}
-        <h2 className="text-2xl font-bold text-gray-900 mt-8">Recent Feedback</h2>
-        <div className="space-y-6">
-          {feedback.length === 0 ? (
-            <Card className="text-center py-8">
-              <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg text-gray-600">No feedback yet. Be the first to provide some!</p>
-            </Card>
-          ) : (
-            feedback.map((f) => (
-              <Card key={f.id} className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <RatingStars rating={f.rating} size={20} />
-                    <span className="text-lg font-semibold text-gray-900">{f.rating}/5</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm text-gray-500">{format(new Date(f.created_at), "MMM d, yyyy")}</span>
-                    {user && (user.id === f.user_id || user.role === "admin") && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteFeedback(f.id)}
-                        loading={deletingFeedbackId === f.id}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
+        <div className="relative">
+          <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-t-xl px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                <MessageSquare className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">Recent Feedback</h2>
+                <p className="text-primary-100 text-sm">{feedback.length} reviews from students</p>
+              </div>
+            </div>
+            {feedback.length > 0 && (
+              <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <Award className="w-5 h-5 text-yellow-300" />
+                  <span className="text-white font-semibold">
+                    {(feedback.reduce((acc, f) => acc + f.rating, 0) / feedback.length).toFixed(1)} / 5.0
+                  </span>
                 </div>
-                {f.course_name && (
-                  <h3 className="text-md font-medium text-gray-800 mb-2">
-                    Related to: {f.course_code} - {f.course_name}
-                  </h3>
-                )}
-                {f.comment && <p className="text-gray-700 mb-3">{f.comment}</p>}
-                <div className="text-sm text-gray-600 flex items-center space-x-4">
-                  <span>By {f.anonymous ? "Anonymous" : f.reviewer_name}</span>
-                  {f.teaching_quality && <span>• Teaching Quality: {f.teaching_quality}/5</span>}
-                  {f.communication_rating && <span>• Communication: {f.communication_rating}/5</span>}
-                  {f.availability_rating && <span>• Availability: {f.availability_rating}/5</span>}
+              </div>
+            )}
+          </div>
+
+          {feedback.length > 0 &&
+            (categoryAverages.teaching || categoryAverages.communication || categoryAverages.availability) && (
+              <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 px-6 py-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Category Averages</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {categoryAverages.teaching && (
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200 shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <Award className="w-5 h-5 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">Teaching Quality</span>
+                        </div>
+                      </div>
+                      <div className="flex items-baseline space-x-1">
+                        <span className="text-3xl font-bold text-blue-700">{categoryAverages.teaching.toFixed(1)}</span>
+                        <span className="text-lg text-blue-600">/5</span>
+                      </div>
+                    </div>
+                  )}
+                  {categoryAverages.communication && (
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200 shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <MessageSquare className="w-5 h-5 text-green-600" />
+                          <span className="text-sm font-medium text-green-900">Communication</span>
+                        </div>
+                      </div>
+                      <div className="flex items-baseline space-x-1">
+                        <span className="text-3xl font-bold text-green-700">
+                          {categoryAverages.communication.toFixed(1)}
+                        </span>
+                        <span className="text-lg text-green-600">/5</span>
+                      </div>
+                    </div>
+                  )}
+                  {categoryAverages.availability && (
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200 shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <TrendingUp className="w-5 h-5 text-purple-600" />
+                          <span className="text-sm font-medium text-purple-900">Availability</span>
+                        </div>
+                      </div>
+                      <div className="flex items-baseline space-x-1">
+                        <span className="text-3xl font-bold text-purple-700">
+                          {categoryAverages.availability.toFixed(1)}
+                        </span>
+                        <span className="text-lg text-purple-600">/5</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </Card>
-            ))
-          )}
+              </div>
+            )}
+
+          <div className="bg-gradient-to-b from-gray-50 to-white rounded-b-xl p-6 space-y-4">
+            {feedback.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-200">
+                <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-lg font-medium text-gray-900 mb-1">No feedback yet</p>
+                <p className="text-gray-500">Be the first to share your experience!</p>
+              </div>
+            ) : (
+              feedback.map((f) => (
+                <div
+                  key={f.id}
+                  className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-primary-200 transition-all duration-200 group"
+                >
+                  {/* Rating Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="flex items-center space-x-2 bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-1.5 rounded-full border border-yellow-200">
+                          <RatingStars rating={f.rating} size={18} />
+                          <span className="text-lg font-bold text-gray-900">{f.rating}.0</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <Users className="w-4 h-4" />
+                          <span className="font-medium">{f.anonymous ? "Anonymous" : f.reviewer_name}</span>
+                        </div>
+                      </div>
+                      {f.course_name && (
+                        <div className="inline-flex items-center space-x-1 bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm font-medium">
+                          <span className="font-semibold">{f.course_code}</span>
+                          <span>•</span>
+                          <span>{f.course_name}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm text-gray-400 font-medium">
+                        {format(new Date(f.created_at), "MMM d, yyyy")}
+                      </span>
+                      {user && (user.id === f.user_id || user.role === "admin") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteFeedback(f.id)}
+                          loading={deletingFeedbackId === f.id}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Comment */}
+                  {f.comment && (
+                    <p className="text-gray-700 leading-relaxed mb-4 pl-1 border-l-4 border-primary-200 bg-gray-50 p-3 rounded-r-lg">
+                      {f.comment}
+                    </p>
+                  )}
+
+                  {/* Detailed Ratings */}
+                  {(f.teaching_quality || f.communication_rating || f.availability_rating) && (
+                    <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-100">
+                      {f.teaching_quality && (
+                        <div className="flex items-center space-x-2 bg-blue-50 px-3 py-1.5 rounded-lg">
+                          <Award className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">Teaching: {f.teaching_quality}/5</span>
+                        </div>
+                      )}
+                      {f.communication_rating && (
+                        <div className="flex items-center space-x-2 bg-green-50 px-3 py-1.5 rounded-lg">
+                          <MessageSquare className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium text-green-900">
+                            Communication: {f.communication_rating}/5
+                          </span>
+                        </div>
+                      )}
+                      {f.availability_rating && (
+                        <div className="flex items-center space-x-2 bg-purple-50 px-3 py-1.5 rounded-lg">
+                          <TrendingUp className="w-4 h-4 text-purple-600" />
+                          <span className="text-sm font-medium text-purple-900">
+                            Availability: {f.availability_rating}/5
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Recent Quotes */}
