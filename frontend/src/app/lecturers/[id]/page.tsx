@@ -11,7 +11,18 @@ import { Card } from "@/components/ui/Card"
 import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { lecturerAPI, lecturerFeedbackAPI, courseAPI } from "@/services/api"
 import type { Lecturer, LecturerFeedback, Quote, LecturerFeedbackForm, Course } from "@/types"
-import { Star, MessageSquare, QuoteIcon, User, PlusCircle, Trash2, Award, TrendingUp, Users } from "lucide-react"
+import {
+  Star,
+  MessageSquare,
+  QuoteIcon,
+  User,
+  PlusCircle,
+  Trash2,
+  Award,
+  TrendingUp,
+  Users,
+  EyeOff,
+} from "lucide-react"
 import { format } from "date-fns"
 import { RatingStars } from "@/components/ui/RatingStars"
 
@@ -281,16 +292,46 @@ export default function LecturerDetailPage() {
               </div>
 
               {/* Anonymous Checkbox */}
-              <div className="flex items-center">
-                <input
-                  id="anonymous-feedback"
-                  type="checkbox"
-                  {...register("anonymous")}
-                  className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                />
-                <label htmlFor="anonymous-feedback" className="ml-2 block text-sm text-gray-900">
-                  Post anonymously
-                </label>
+              <div className="relative">
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-6 hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-3 rounded-lg shadow-md">
+                        <EyeOff className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="anonymous-feedback"
+                          className="block text-base font-semibold text-gray-900 cursor-pointer"
+                        >
+                          Post Anonymously
+                        </label>
+                        <p className="text-sm text-gray-600 mt-0.5">Your identity will be hidden from others</p>
+                      </div>
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <label htmlFor="anonymous-feedback" className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        id="anonymous-feedback"
+                        type="checkbox"
+                        {...register("anonymous")}
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-indigo-600 shadow-inner"></div>
+                    </label>
+                  </div>
+
+                  {/* Status indicator */}
+                  {watch("anonymous") && (
+                    <div className="mt-3 pt-3 border-t border-purple-200">
+                      <div className="flex items-center space-x-2 text-sm">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-purple-700 font-medium">Anonymous mode enabled</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end space-x-4">
