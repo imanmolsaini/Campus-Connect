@@ -7,14 +7,13 @@ import { Layout } from "@/components/layout/Layout"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Card } from "@/components/ui/Card"
+import { VotingButtons } from "@/components/ui/VotingButtons"
 import { useAuth } from "@/contexts/AuthContext"
 import { jobAPI } from "@/services/api"
 import type { Job, JobForm, JobComment } from "@/types"
 import {
   PlusCircle,
   Search,
-  TrendingUp,
-  TrendingDown,
   MapPin,
   Calendar,
   Briefcase,
@@ -24,6 +23,8 @@ import {
   MessageCircle,
   Send,
   DollarSign,
+  Filter,
+  X,
 } from "lucide-react"
 import { format, isAfter } from "date-fns"
 
@@ -236,18 +237,26 @@ export default function JobsPage() {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Jobs & Voluntary Work</h1>
-            <p className="text-gray-600 mt-2">Find part-time jobs, internships, and volunteer opportunities</p>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Briefcase className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Jobs & Voluntary Work</h1>
+                  <p className="text-gray-600 mt-1">Find part-time jobs, internships, and volunteer opportunities</p>
+                </div>
+              </div>
+            </div>
+            {user && (
+              <Button onClick={() => setShowAddForm(!showAddForm)} className="bg-blue-600 hover:bg-blue-700">
+                <PlusCircle className="w-4 h-4 mr-2" />
+                {showAddForm ? "Hide Form" : "Post Job"}
+              </Button>
+            )}
           </div>
-          {user && (
-            <Button onClick={() => setShowAddForm(!showAddForm)}>
-              <PlusCircle className="w-4 h-4 mr-2" />
-              {showAddForm ? "Hide Form" : "Post Job"}
-            </Button>
-          )}
         </div>
 
         {/* Add Job Form */}
@@ -358,8 +367,28 @@ export default function JobsPage() {
           </Card>
         )}
 
-        {/* Filters and Sort */}
-        <Card>
+        <Card className="shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <Filter className="w-5 h-5 text-gray-600" />
+              <h3 className="text-sm font-semibold text-gray-900">Filters</h3>
+            </div>
+            {(searchTerm || selectedJobType !== "all" || selectedLocation) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm("")
+                  setSelectedJobType("all")
+                  setSelectedLocation("")
+                }}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Clear All
+              </Button>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -373,7 +402,7 @@ export default function JobsPage() {
             <select
               value={selectedJobType}
               onChange={(e) => setSelectedJobType(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
               {JOB_TYPES.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -389,7 +418,7 @@ export default function JobsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
               {SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -403,8 +432,8 @@ export default function JobsPage() {
         {/* Jobs List */}
         <div className="space-y-4">
           {jobs.length === 0 ? (
-            <Card className="text-center py-8">
-              <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <Card className="text-center py-12 shadow-sm border border-gray-200">
+              <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-lg text-gray-600">No jobs found. Be the first to post one!</p>
             </Card>
           ) : (
@@ -412,85 +441,79 @@ export default function JobsPage() {
               const isExpired = job.expires_at && isAfter(new Date(), new Date(job.expires_at))
 
               return (
-                <Card key={job.id} className={`p-4 ${isExpired ? "opacity-60" : ""}`}>
-                  <div className="flex space-x-4">
-                    {/* Voting */}
-                    <div className="flex flex-col items-center space-y-1 min-w-[60px]">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleVote(job.id, "up")}
-                        disabled={!user || votingJobId === job.id}
-                        className={`p-1 ${job.user_vote === "up" ? "text-green-600 bg-green-50" : "text-gray-400 hover:text-green-600"}`}
-                      >
-                        <TrendingUp className="w-5 h-5" />
-                      </Button>
-                      <span className="text-sm font-medium text-gray-700">
-                        {(job.upvotes || 0) - (job.downvotes || 0)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleVote(job.id, "down")}
-                        disabled={!user || votingJobId === job.id}
-                        className={`p-1 ${job.user_vote === "down" ? "text-red-600 bg-red-50" : "text-gray-400 hover:text-red-600"}`}
-                      >
-                        <TrendingDown className="w-5 h-5" />
-                      </Button>
-                    </div>
+                <Card
+                  key={job.id}
+                  className={`p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 ${
+                    isExpired ? "opacity-60" : ""
+                  }`}
+                >
+                  <div className="flex space-x-6">
+                    <VotingButtons
+                      upvotes={job.upvotes || 0}
+                      downvotes={job.downvotes || 0}
+                      userVote={job.user_vote ?? null}
+                      onVote={(voteType) => handleVote(job.id, voteType)}
+                      disabled={!user || votingJobId === job.id}
+                    />
 
                     {/* Job Content */}
                     <div className="flex-1">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {job.title}
-                              {isExpired && <span className="ml-2 text-sm text-red-500">(Expired)</span>}
-                            </h3>
+                          <div className="flex items-center space-x-3 mb-3">
+                            <h3 className="text-xl font-semibold text-gray-900">{job.title}</h3>
                             <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getJobTypeColor(job.job_type)}`}
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getJobTypeColor(job.job_type)}`}
                             >
                               {job.job_type}
                             </span>
+                            {isExpired && (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Expired
+                              </span>
+                            )}
                           </div>
 
                           {/* Pay Info */}
                           {job.pay_rate && (
-                            <div className="flex items-center space-x-2 mb-2">
-                              <DollarSign className="w-4 h-4 text-green-600" />
-                              <span className="text-lg font-medium text-green-600">{job.pay_rate}</span>
-                              {job.pay_type && <span className="text-sm text-gray-500">({job.pay_type})</span>}
+                            <div className="flex items-center space-x-2 mb-3 bg-green-50 px-3 py-2 rounded-lg inline-flex">
+                              <DollarSign className="w-5 h-5 text-green-600" />
+                              <span className="text-lg font-semibold text-green-700">{job.pay_rate}</span>
+                              {job.pay_type && <span className="text-sm text-green-600">({job.pay_type})</span>}
                             </div>
                           )}
 
                           {/* Description */}
-                          {job.description && <p className="text-gray-700 mb-3 line-clamp-3">{job.description}</p>}
+                          {job.description && (
+                            <p className="text-gray-700 mb-4 leading-relaxed line-clamp-3">{job.description}</p>
+                          )}
 
                           {/* Meta Info */}
-                          <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
-                            <div className="flex items-center space-x-1">
-                              <User className="w-4 h-4" />
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+                            <div className="flex items-center space-x-1.5">
+                              <User className="w-4 h-4 text-gray-400" />
                               <span>{job.uploader_name}</span>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <MapPin className="w-4 h-4" />
+                            <div className="flex items-center space-x-1.5">
+                              <MapPin className="w-4 h-4 text-gray-400" />
                               <span>{job.location}</span>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <Clock className="w-4 h-4" />
+                            <div className="flex items-center space-x-1.5">
+                              <Clock className="w-4 h-4 text-gray-400" />
                               <span>{format(new Date(job.created_at), "MMM d, yyyy")}</span>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <Calendar className="w-4 h-4" />
+                            <div className="flex items-center space-x-1.5">
+                              <Calendar className="w-4 h-4 text-gray-400" />
                               <span>Expires {format(new Date(job.expires_at), "MMM d")}</span>
                             </div>
                           </div>
 
                           {/* Contact Info */}
-                          <div className="bg-gray-50 p-3 rounded-lg mb-3">
-                            <h4 className="text-sm font-medium text-gray-900 mb-1">How to Apply:</h4>
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{job.contact_info}</p>
+                          <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg mb-4">
+                            <h4 className="text-sm font-semibold text-blue-900 mb-2">How to Apply:</h4>
+                            <p className="text-sm text-blue-800 whitespace-pre-wrap leading-relaxed">
+                              {job.contact_info}
+                            </p>
                           </div>
 
                           {/* Actions */}
@@ -499,9 +522,9 @@ export default function JobsPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleToggleComments(job.id)}
-                              className="text-blue-600 hover:text-blue-700"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                             >
-                              <MessageCircle className="w-4 h-4 mr-1" />
+                              <MessageCircle className="w-4 h-4 mr-1.5" />
                               Comments ({job.comment_count || 0})
                             </Button>
                             {(user?.role === "admin" || user?.id === job.user_id) && (
@@ -510,9 +533,10 @@ export default function JobsPage() {
                                 size="sm"
                                 onClick={() => handleDeleteJob(job.id)}
                                 loading={deletingJobId === job.id}
-                                className="text-red-600 hover:text-red-700"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4 mr-1.5" />
+                                Delete
                               </Button>
                             )}
                           </div>
