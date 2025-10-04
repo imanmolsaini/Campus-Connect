@@ -10,20 +10,9 @@ import { Card } from "@/components/ui/Card"
 import { useAuth } from "@/contexts/AuthContext"
 import { dealAPI } from "@/services/api"
 import type { Deal, DealForm } from "@/types"
-import {
-  PlusCircle,
-  Search,
-  TrendingUp,
-  TrendingDown,
-  ExternalLink,
-  Calendar,
-  DollarSign,
-  Trash2,
-  Clock,
-  Tag,
-  User,
-} from "lucide-react"
+import { PlusCircle, Search, ExternalLink, Calendar, DollarSign, Trash2, Clock, Tag, User, Percent } from "lucide-react"
 import { format, isAfter } from "date-fns"
+import { VotingButtons } from "@/components/ui/VotingButtons"
 
 const CATEGORIES = [
   { value: "all", label: "All Categories" },
@@ -78,7 +67,7 @@ export default function DealsPage() {
         category: selectedCategory,
         sort: sortBy,
       })
-      if (response.success) {
+      if (response.success && response.data) {
         setDeals(response.data.deals)
       }
     } catch (error) {
@@ -178,25 +167,36 @@ export default function DealsPage() {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Deals and Coupons</h1>
-            <p className="text-gray-600 mt-2">Share and discover the best deals online</p>
+      <div className="max-w-6xl mx-auto space-y-8">
+        <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <DollarSign className="w-7 h-7 text-green-600" />
+                </div>
+                <h1 className="text-4xl font-bold text-gray-900">Deals and Coupons</h1>
+              </div>
+              <p className="text-gray-600 text-lg">Share and discover the best deals online</p>
+            </div>
+            {user && (
+              <Button
+                onClick={() => setShowAddForm(!showAddForm)}
+                className="bg-green-600 hover:bg-green-700 text-white shadow-md"
+              >
+                <PlusCircle className="w-4 h-4 mr-2" />
+                {showAddForm ? "Hide Form" : "Post Deal"}
+              </Button>
+            )}
           </div>
-          {user && (
-            <Button onClick={() => setShowAddForm(!showAddForm)}>
-              <PlusCircle className="w-4 h-4 mr-2" />
-              {showAddForm ? "Hide Form" : "Post Deal"}
-            </Button>
-          )}
         </div>
 
-        {/* Add Deal Form */}
         {showAddForm && user && (
-          <Card>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Post a New Deal</h2>
+          <Card className="border-2 border-green-100 shadow-md">
+            <div className="flex items-center gap-2 mb-4">
+              <Tag className="w-6 h-6 text-green-600" />
+              <h2 className="text-xl font-semibold text-gray-900">Post a New Deal</h2>
+            </div>
             <form onSubmit={handleSubmit(onSubmitDeal)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
@@ -254,7 +254,7 @@ export default function DealsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <select
                     {...register("category")}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
                   >
                     {CATEGORIES.slice(1).map((cat) => (
                       <option key={cat.value} value={cat.value}>
@@ -306,22 +306,21 @@ export default function DealsPage() {
           </Card>
         )}
 
-        {/* Filters and Sort */}
-        <Card>
+        <Card className="border-2 border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 placeholder="Search deals..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 border-gray-300 focus:ring-green-500 focus:border-green-500"
               />
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value}>
@@ -332,7 +331,7 @@ export default function DealsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
             >
               {SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -343,142 +342,144 @@ export default function DealsPage() {
           </div>
         </Card>
 
-        {/* Deals List */}
-        <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-3xl font-bold text-gray-900">All Deals</h2>
+          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+            {deals.length} {deals.length === 1 ? "deal" : "deals"}
+          </span>
+        </div>
+
+        <div className="space-y-6">
           {deals.length === 0 ? (
-            <Card className="text-center py-8">
-              <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg text-gray-600">No deals found. Be the first to post one!</p>
-            </Card>
+            <div className="rounded-2xl bg-gray-50 p-12 text-center border-2 border-dashed border-gray-300">
+              <DollarSign className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-xl font-medium text-gray-700 mb-2">No deals found</p>
+              <p className="text-gray-500">Be the first to post one!</p>
+            </div>
           ) : (
             deals.map((deal) => {
               const isExpired = deal.expires_at && isAfter(new Date(), new Date(deal.expires_at))
 
               return (
-                <Card key={deal.id} className={`p-4 ${isExpired ? "opacity-60" : ""}`}>
-                  <div className="flex space-x-4">
-                    {/* Voting */}
-                    <div className="flex flex-col items-center space-y-1 min-w-[60px]">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleVote(deal.id, "up")}
-                        disabled={!user || votingDealId === deal.id}
-                        className={`p-1 ${deal.user_vote === "up" ? "text-green-600 bg-green-50" : "text-gray-400 hover:text-green-600"}`}
-                      >
-                        <TrendingUp className="w-5 h-5" />
-                      </Button>
-                      <span className="text-sm font-medium text-gray-700">
-                        {(deal.upvotes || 0) - (deal.downvotes || 0)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleVote(deal.id, "down")}
-                        disabled={!user || votingDealId === deal.id}
-                        className={`p-1 ${deal.user_vote === "down" ? "text-red-600 bg-red-50" : "text-gray-400 hover:text-red-600"}`}
-                      >
-                        <TrendingDown className="w-5 h-5" />
-                      </Button>
-                    </div>
+                <div key={deal.id} className="group">
+                  <Card
+                    className={`p-6 border-2 border-gray-200 hover:border-green-300 transition-all duration-300 hover:shadow-lg bg-white ${
+                      isExpired ? "opacity-60" : ""
+                    }`}
+                  >
+                    <div className="flex space-x-6">
+                      <VotingButtons
+                        upvotes={deal.upvotes || 0}
+                        downvotes={deal.downvotes || 0}
+                        userVote={deal.user_vote ?? null}
+                        onVote={(voteType) => handleVote(deal.id, voteType)}
+                        disabled={!user}
+                        loading={votingDealId === deal.id}
+                      />
 
-                    {/* Deal Content */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            {deal.title}
-                            {isExpired && <span className="ml-2 text-sm text-red-500">(Expired)</span>}
-                          </h3>
-
-                          {/* Price Info */}
-                          {(deal.original_price || deal.deal_price) && (
-                            <div className="flex items-center space-x-3 mb-2">
-                              {deal.deal_price && (
-                                <span className="text-xl font-bold text-green-600">${deal.deal_price}</span>
-                              )}
-                              {deal.original_price && deal.original_price !== deal.deal_price && (
-                                <span className="text-lg text-gray-500 line-through">${deal.original_price}</span>
-                              )}
-                              {deal.discount_percentage && (
-                                <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded">
-                                  {deal.discount_percentage}% OFF
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">
+                              {deal.title}
+                              {isExpired && (
+                                <span className="ml-2 text-sm font-medium text-red-500 bg-red-50 px-2 py-1 rounded">
+                                  Expired
                                 </span>
                               )}
+                            </h3>
+
+                            {(deal.original_price || deal.deal_price) && (
+                              <div className="flex items-center gap-4 mb-4">
+                                {deal.deal_price && (
+                                  <span className="text-3xl font-bold text-green-600">${deal.deal_price}</span>
+                                )}
+                                {deal.original_price && deal.original_price !== deal.deal_price && (
+                                  <span className="text-xl text-gray-400 line-through">${deal.original_price}</span>
+                                )}
+                                {deal.discount_percentage && (
+                                  <div className="flex items-center gap-1 bg-gradient-to-r from-red-500 to-orange-500 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-md">
+                                    <Percent className="w-4 h-4" />
+                                    <span>{deal.discount_percentage}% OFF</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {deal.description && (
+                              <p className="text-gray-700 mb-4 line-clamp-2 text-base leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                {deal.description}
+                              </p>
+                            )}
+
+                            <div className="flex items-center flex-wrap gap-4 text-sm text-gray-600 mb-4">
+                              <div className="flex items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-lg">
+                                <User className="w-4 h-4 text-gray-500" />
+                                <span className="font-medium">{deal.uploader_name}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-lg">
+                                <Clock className="w-4 h-4 text-gray-500" />
+                                <span>{format(new Date(deal.created_at), "MMM d, yyyy")}</span>
+                              </div>
+                              {deal.category && (
+                                <div className="flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg">
+                                  <Tag className="w-4 h-4 text-blue-600" />
+                                  <span className="capitalize text-blue-700 font-medium">{deal.category}</span>
+                                </div>
+                              )}
+                              {deal.expires_at && !isExpired && (
+                                <div className="flex items-center gap-1.5 bg-orange-50 px-3 py-1.5 rounded-lg">
+                                  <Calendar className="w-4 h-4 text-orange-600" />
+                                  <span className="text-orange-700 font-medium">
+                                    Expires {format(new Date(deal.expires_at), "MMM d")}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                              {deal.website_url && (
+                                <a
+                                  href={deal.website_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                  {deal.website_name || "View Deal"}
+                                </a>
+                              )}
+                              {(user?.role === "admin" || user?.id === deal.user_id) && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteDeal(deal.id)}
+                                  loading={deletingDealId === deal.id}
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+
+                          {deal.image_url && (
+                            <div className="flex-shrink-0">
+                              <img
+                                src={deal.image_url || "/placeholder.svg"}
+                                alt={deal.title}
+                                className="w-40 h-32 object-cover rounded-xl border-2 border-gray-200 group-hover:border-green-300 transition-all duration-300 shadow-md"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none"
+                                }}
+                              />
                             </div>
                           )}
-
-                          {/* Description */}
-                          {deal.description && <p className="text-gray-700 mb-3 line-clamp-3">{deal.description}</p>}
-
-                          {/* Meta Info */}
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <div className="flex items-center space-x-1">
-                              <User className="w-4 h-4" />
-                              <span>{deal.uploader_name}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <Clock className="w-4 h-4" />
-                              <span>{format(new Date(deal.created_at), "MMM d, yyyy")}</span>
-                            </div>
-                            {deal.category && (
-                              <div className="flex items-center space-x-1">
-                                <Tag className="w-4 h-4" />
-                                <span className="capitalize">{deal.category}</span>
-                              </div>
-                            )}
-                            {deal.expires_at && (
-                              <div className="flex items-center space-x-1">
-                                <Calendar className="w-4 h-4" />
-                                <span>Expires {format(new Date(deal.expires_at), "MMM d")}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex items-center space-x-4 mt-3">
-                            {deal.website_url && (
-                              <a
-                                href={deal.website_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
-                              >
-                                <ExternalLink className="w-4 h-4 mr-1" />
-                                {deal.website_name || "View Deal"}
-                              </a>
-                            )}
-                            {(user?.role === "admin" || user?.id === deal.user_id) && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteDeal(deal.id)}
-                                loading={deletingDealId === deal.id}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
                         </div>
-
-                        {/* Deal Image */}
-                        {deal.image_url && (
-                          <div className="ml-4 flex-shrink-0">
-                            <img
-                              src={deal.image_url || "/placeholder.svg"}
-                              alt={deal.title}
-                              className="w-32 h-24 object-cover rounded-lg border"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none"
-                              }}
-                            />
-                          </div>
-                        )}
                       </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
+                </div>
               )
             })
           )}
