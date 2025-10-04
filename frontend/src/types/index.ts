@@ -288,3 +288,15 @@ export interface DealForm {
   image_url?: string
   expires_at?: string
 }
+
+// Job form (NEW)
+export interface JobForm {
+  title: string
+  job_type: "part-time" | "full-time" | "casual" | "voluntary"
+  pay_rate?: string
+  pay_type?: "hourly" | "weekly" | "fixed" | "unpaid"
+  description?: string
+  location: string
+  contact_info: string
+  expires_at: string
+}
