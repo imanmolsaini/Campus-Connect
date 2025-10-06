@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
@@ -20,16 +20,54 @@ import {
   DollarSign,
   Briefcase,
   Calendar,
+  Bell,
 } from "lucide-react"
+import { DealNotifications } from "@/components/ui/DealNotifications"
+import { dealAPI } from "@/services/api"
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [unseenCount, setUnseenCount] = useState(0)
 
   const handleLogout = () => {
     logout()
     router.push("/")
+  }
+
+  useEffect(() => {
+    if (user) {
+      checkForNewDeals()
+      // Poll for new deals every 30 seconds
+      const interval = setInterval(checkForNewDeals, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [user])
+
+  const checkForNewDeals = async () => {
+    try {
+      const response = await dealAPI.getDeals({
+        sort: "new",
+        limit: 10,
+      })
+      if (response.success && response.data) {
+        const readDealsStored = localStorage.getItem("readDealIds")
+        const readDealIds = readDealsStored ? new Set(JSON.parse(readDealsStored)) : new Set()
+
+        // Count deals that haven't been marked as read
+        const unreadDeals = response.data.deals.filter((deal) => !readDealIds.has(deal.id))
+        setUnseenCount(unreadDeals.length)
+      }
+    } catch (error) {
+      console.error("Failed to check for new deals:", error)
+    }
+  }
+
+  const handleMarkAsSeen = () => {
+    // Recalculate the unseen count
+    checkForNewDeals()
   }
 
   const navigation = user
@@ -81,6 +119,24 @@ export const Header: React.FC = () => {
           <div className="flex items-center space-x-4">
             {user ? (
               <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300 backdrop-blur-sm"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {unseenCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg">
+                        {unseenCount > 9 ? "9+" : unseenCount}
+                      </span>
+                    )}
+                  </button>
+                  {showNotifications && (
+                    <DealNotifications onClose={() => setShowNotifications(false)} onMarkAsSeen={handleMarkAsSeen} />
+                  )}
+                </div>
+
                 <div className="hidden md:flex items-center space-x-2">
                   <User className="w-4 h-4 text-white/80" />
                   <span className="text-sm text-white/90">{user.name}</span>
