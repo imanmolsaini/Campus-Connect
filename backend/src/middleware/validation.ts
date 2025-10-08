@@ -150,6 +150,30 @@ export const createEventSchema = Joi.object({
   image_url: Joi.string().uri().max(500).optional().allow(""),
 })
 
+export const createCommunityQuestionSchema = Joi.object({
+  title: Joi.string().min(5).max(200).required().messages({
+    "string.empty": "Question title is required",
+    "string.min": "Question title must be at least 5 characters long",
+    "string.max": "Question title must be less than 200 characters",
+    "any.required": "Question title is required",
+  }),
+  content: Joi.string().min(10).max(2000).required().messages({
+    "string.empty": "Question content is required",
+    "string.min": "Question content must be at least 10 characters long",
+    "string.max": "Question content must be less than 2000 characters",
+    "any.required": "Question content is required",
+  }),
+})
+
+export const createCommunityReplySchema = Joi.object({
+  content: Joi.string().min(1).max(1000).required().messages({
+    "string.empty": "Reply content is required",
+    "string.min": "Reply content must be at least 1 character long",
+    "string.max": "Reply content must be less than 1000 characters",
+    "any.required": "Reply content is required",
+  }),
+})
+
 // Validation middleware factory
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response<ApiResponse>, next: NextFunction): void => {
