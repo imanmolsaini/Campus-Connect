@@ -14,6 +14,8 @@ import type {
   Job,
   JobComment,
   Event,
+  CommunityQuestion,
+  CommunityReply,
 } from "@/types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
@@ -466,6 +468,64 @@ export const eventAPI = {
   },
   deleteEvent: async (id: string): Promise<ApiResponse> => {
     const response: AxiosResponse<ApiResponse> = await api.delete(`/events/${id}`)
+    return response.data
+  },
+}
+
+// Community API for questions and replies
+export const communityAPI = {
+  getQuestions: async (params?: {
+    search?: string
+    resolved?: string
+    sort?: string
+    limit?: number
+    offset?: number
+  }): Promise<ApiResponse<{ questions: CommunityQuestion[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ questions: CommunityQuestion[]; total: number }>> = await api.get(
+      "/community/questions",
+      { params },
+    )
+    return response.data
+  },
+  createQuestion: async (data: {
+    title: string
+    content: string
+  }): Promise<ApiResponse<{ question: CommunityQuestion }>> => {
+    const response: AxiosResponse<ApiResponse<{ question: CommunityQuestion }>> = await api.post(
+      "/community/questions",
+      data,
+    )
+    return response.data
+  },
+  deleteQuestion: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/community/questions/${id}`)
+    return response.data
+  },
+  toggleResolved: async (id: string): Promise<ApiResponse<{ question: CommunityQuestion }>> => {
+    const response: AxiosResponse<ApiResponse<{ question: CommunityQuestion }>> = await api.patch(
+      `/community/questions/${id}/resolved`,
+    )
+    return response.data
+  },
+  getQuestionReplies: async (
+    id: string,
+    params?: { limit?: number; offset?: number },
+  ): Promise<ApiResponse<{ replies: CommunityReply[]; total: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ replies: CommunityReply[]; total: number }>> = await api.get(
+      `/community/questions/${id}/replies`,
+      { params },
+    )
+    return response.data
+  },
+  createReply: async (id: string, data: { content: string }): Promise<ApiResponse<{ reply: CommunityReply }>> => {
+    const response: AxiosResponse<ApiResponse<{ reply: CommunityReply }>> = await api.post(
+      `/community/questions/${id}/replies`,
+      data,
+    )
+    return response.data
+  },
+  deleteReply: async (replyId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/community/replies/${replyId}`)
     return response.data
   },
 }
