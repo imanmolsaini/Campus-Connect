@@ -129,3 +129,4 @@ Thumbs.db
 database/env
 frontend/env.local
 .DS_Store
+database/.DS_Store
