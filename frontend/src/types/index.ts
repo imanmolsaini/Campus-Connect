@@ -202,6 +202,29 @@ export interface JobComment {
   updated_at: string
 }
 
+// Community Question and Reply types (NEW)
+export interface CommunityQuestion {
+  id: string
+  user_id: string
+  title: string
+  content: string
+  is_resolved: boolean
+  author_name: string
+  reply_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CommunityReply {
+  id: string
+  question_id: string
+  user_id: string
+  content: string
+  author_name: string
+  created_at: string
+  updated_at: string
+}
+
 // Form types
 export interface LoginForm {
   email: string
@@ -299,4 +322,14 @@ export interface JobForm {
   location: string
   contact_info: string
   expires_at: string
+}
+
+// Community Question and Reply form types (NEW)
+export interface CommunityQuestionForm {
+  title: string
+  content: string
+}
+
+export interface CommunityReplyForm {
+  content: string
 }
