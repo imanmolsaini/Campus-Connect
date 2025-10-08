@@ -189,6 +189,32 @@ export interface JobComment {
   commenter_name?: string
 }
 
+// Community Question types (NEW)
+export interface CommunityQuestion {
+  id: string
+  user_id: string
+  title: string
+  content: string
+  is_resolved: boolean
+  created_at: Date
+  updated_at: Date
+  // Additional fields from joins
+  author_name?: string
+  reply_count?: number
+}
+
+// Community Reply types (NEW)
+export interface CommunityReply {
+  id: string
+  question_id: string
+  user_id: string
+  content: string
+  created_at: Date
+  updated_at: Date
+  // Additional fields from joins
+  author_name?: string
+}
+
 // Request types
 export interface AuthenticatedRequest extends Request {
   user?: UserPayload
@@ -313,4 +339,15 @@ export interface CreateJobRequest {
 // Job comment request types (NEW)
 export interface CreateJobCommentRequest {
   comment_text: string
+}
+
+// Community Question request types (NEW)
+export interface CreateCommunityQuestionRequest {
+  title: string
+  content: string
+}
+
+// Community Reply request types (NEW)
+export interface CreateCommunityReplyRequest {
+  content: string
 }
