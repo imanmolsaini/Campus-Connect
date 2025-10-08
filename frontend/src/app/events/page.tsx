@@ -43,6 +43,7 @@ export default function EventsPage() {
   const [sortBy, setSortBy] = useState("upcoming")
   const [interestingEventId, setInterestingEventId] = useState<string | null>(null)
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
+  const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null)
 
   const {
     register,
@@ -63,7 +64,7 @@ export default function EventsPage() {
         event_type: selectedType,
         sort: sortBy,
       })
-      if (response.success) {
+      if (response.success && response.data) {
         setEvents(response.data.events)
       }
     } catch (error) {
@@ -101,7 +102,6 @@ export default function EventsPage() {
 
     setInterestingEventId(eventId)
     try {
-      // Map "up" to "interested" and "down" to "not_interested"
       const interestType = voteType === "up" ? "interested" : "not_interested"
       const response = await eventAPI.markInterest(eventId, interestType)
       if (response.success) {
@@ -171,7 +171,6 @@ export default function EventsPage() {
           </div>
         </div>
 
-        {/* Add Event Form */}
         {showAddForm && user && (
           <Card>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Create a New Event</h2>
@@ -317,7 +316,6 @@ export default function EventsPage() {
           </div>
         </Card>
 
-        {/* Events List */}
         <div className="space-y-4">
           {events.length === 0 ? (
             <Card className="text-center py-12 shadow-sm border border-gray-200">
@@ -351,7 +349,6 @@ export default function EventsPage() {
                       disabled={!user || interestingEventId === event.id}
                     />
 
-                    {/* Event Content */}
                     <div className="flex-1">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -367,9 +364,8 @@ export default function EventsPage() {
                             )}
                           </div>
 
-                          {/* Event Details */}
                           <div className="space-y-2 mb-4">
-                            <div className="flex items-center space-x-2 text-sm text-gray-700 bg-blue-50 px-3 py-2 rounded-lg inline-flex">
+                            <div className="inline-flex items-center space-x-2 text-sm text-gray-700 bg-blue-50 px-3 py-2 rounded-lg">
                               <Calendar className="w-4 h-4 text-blue-600" />
                               <span className="font-medium">{format(eventDate, "EEEE, MMMM d, yyyy")}</span>
                             </div>
@@ -385,12 +381,10 @@ export default function EventsPage() {
                             </div>
                           </div>
 
-                          {/* Description */}
                           {event.event_description && (
                             <p className="text-gray-700 mb-4 leading-relaxed line-clamp-3">{event.event_description}</p>
                           )}
 
-                          {/* Meta Info */}
                           <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
                             <div className="flex items-center space-x-1.5">
                               <User className="w-4 h-4 text-gray-400" />
@@ -398,7 +392,6 @@ export default function EventsPage() {
                             </div>
                           </div>
 
-                          {/* Actions */}
                           <div className="flex items-center space-x-4">
                             {(user?.role === "admin" || user?.id === event.user_id) && (
                               <Button
@@ -415,13 +408,13 @@ export default function EventsPage() {
                           </div>
                         </div>
 
-                        {/* Event Image */}
                         {event.image_url && (
                           <div className="ml-4 flex-shrink-0">
                             <img
                               src={event.image_url || "/placeholder.svg"}
                               alt={event.event_name}
-                              className="w-40 h-32 object-cover rounded-lg border border-gray-200 shadow-sm"
+                              className="w-40 h-32 object-cover rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={() => setSelectedImage({ url: event.image_url!, alt: event.event_name })}
                               onError={(e) => {
                                 e.currentTarget.style.display = "none"
                               }}
@@ -437,6 +430,32 @@ export default function EventsPage() {
           )}
         </div>
       </div>
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-4xl w-full bg-white rounded-lg overflow-hidden shadow-2xl">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 z-10 bg-white/90 hover:bg-white rounded-full p-2 transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5 text-gray-700" />
+            </button>
+            <img
+              src={selectedImage.url || "/placeholder.svg"}
+              alt={selectedImage.alt}
+              className="w-full h-auto max-h-[85vh] object-contain"
+              onClick={(e) => e.stopPropagation()}
+              onError={(e) => {
+                e.currentTarget.src = "/placeholder.svg"
+              }}
+            />
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }
