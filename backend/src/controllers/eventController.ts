@@ -1,12 +1,15 @@
 import type { Request, Response } from "express"
 import pool from "@/config/database"
 import type { AuthenticatedRequest, ApiResponse, CreateEventRequest } from "@/types"
+import { EmailService } from "@/services/emailService"
 
 export class EventController {
   static async getEvents(req: Request, res: Response<ApiResponse>): Promise<void> {
     try {
       const { event_type, search, sort = "new", limit = "20", offset = "0" } = req.query
       const userId = (req as AuthenticatedRequest).user?.id
+
+      console.log("[v0] Fetching events - userId:", userId, "filters:", { event_type, search, sort })
 
       let query = `
         SELECT 
@@ -15,6 +18,7 @@ export class EventController {
           COALESCE(interested.count, 0) as interested_count,
           COALESCE(not_interested.count, 0) as not_interested_count,
           user_interests.interest_type as user_interest
+          ${userId ? ", CASE WHEN user_subscriptions.id IS NOT NULL THEN true ELSE false END as is_subscribed" : ", false as is_subscribed"}
         FROM events e
         JOIN users u ON e.user_id = u.id
         LEFT JOIN (
@@ -30,6 +34,7 @@ export class EventController {
           GROUP BY event_id
         ) not_interested ON e.id = not_interested.event_id
         LEFT JOIN event_interests user_interests ON e.id = user_interests.event_id AND user_interests.user_id = $1
+        ${userId ? "LEFT JOIN event_subscriptions user_subscriptions ON e.id = user_subscriptions.event_id AND user_subscriptions.user_id = $1" : ""}
       `
 
       const conditions: string[] = ["e.is_active = true"]
@@ -64,7 +69,9 @@ export class EventController {
       query += ` LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`
       values.push(Number.parseInt(limit as string), Number.parseInt(offset as string))
 
+      console.log("[v0] Executing query with", values.length, "parameters")
       const result = await pool.query(query, values)
+      console.log("[v0] Query successful - found", result.rows.length, "events")
 
       res.json({
         success: true,
@@ -75,10 +82,15 @@ export class EventController {
         },
       })
     } catch (error) {
-      console.error("Get events error:", error)
+      console.error("[v0] Get events error:", error)
+      console.error("[v0] Error details:", {
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      })
       res.status(500).json({
         success: false,
         message: "Internal server error",
+        error: error instanceof Error ? error.message : "Unknown error",
       })
     }
   }
@@ -92,7 +104,7 @@ export class EventController {
       // Manual validation to ensure event time is in the future
       const eventDate = new Date(event_time)
       const now = new Date()
-      
+
       if (eventDate <= now) {
         res.status(400).json({
           success: false,
@@ -215,6 +227,121 @@ export class EventController {
       })
     } catch (error) {
       console.error("Delete event error:", error)
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      })
+    }
+  }
+
+  static async subscribeToEvent(req: AuthenticatedRequest, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const { id } = req.params
+      const userId = req.user!.id
+      const userEmail = req.user!.email
+
+      console.log("[v0] Subscribe request - eventId:", id, "userId:", userId)
+
+      // Check if event exists
+      const eventResult = await pool.query(
+        `SELECT e.*, u.name as organizer_name 
+         FROM events e 
+         JOIN users u ON e.user_id = u.id 
+         WHERE e.id = $1 AND e.is_active = true`,
+        [id],
+      )
+
+      if (eventResult.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          message: "Event not found",
+        })
+        return
+      }
+
+      const event = eventResult.rows[0]
+
+      // Check if already subscribed
+      const existingSubscription = await pool.query(
+        "SELECT id FROM event_subscriptions WHERE event_id = $1 AND user_id = $2",
+        [id, userId],
+      )
+
+      if (existingSubscription.rows.length > 0) {
+        res.status(400).json({
+          success: false,
+          message: "You are already subscribed to this event",
+        })
+        return
+      }
+
+      // Create subscription
+      await pool.query("INSERT INTO event_subscriptions (event_id, user_id) VALUES ($1, $2)", [id, userId])
+
+      // Get user details for email
+      const userResult = await pool.query("SELECT name, email FROM users WHERE id = $1", [userId])
+      const user = userResult.rows[0]
+
+      // Send subscription email with calendar link
+      try {
+        await EmailService.sendEventSubscriptionEmail(user.email, user.name, {
+          event_name: event.event_name,
+          event_time: event.event_time,
+          event_place: event.event_place,
+          event_location: event.event_location,
+          event_description: event.event_description,
+          event_type: event.event_type,
+        })
+
+        console.log(`[v0] Subscription email sent successfully to ${user.email} for event ${event.event_name}`)
+      } catch (emailError) {
+        console.error("[v0] Failed to send subscription email:", emailError)
+        // Don't fail the subscription if email fails
+      }
+
+      res.status(201).json({
+        success: true,
+        message: "Successfully subscribed to event! Check your email for event details and calendar link.",
+      })
+    } catch (error) {
+      console.error("[v0] Subscribe to event error:", error)
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      })
+    }
+  }
+
+  static async unsubscribeFromEvent(req: AuthenticatedRequest, res: Response<ApiResponse>): Promise<void> {
+    try {
+      const { id } = req.params
+      const userId = req.user!.id
+
+      console.log("[v0] Unsubscribe request - eventId:", id, "userId:", userId)
+
+      // Check if subscribed
+      const existingSubscription = await pool.query(
+        "SELECT id FROM event_subscriptions WHERE event_id = $1 AND user_id = $2",
+        [id, userId],
+      )
+
+      if (existingSubscription.rows.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: "You are not subscribed to this event",
+        })
+        return
+      }
+
+      // Delete subscription
+      await pool.query("DELETE FROM event_subscriptions WHERE event_id = $1 AND user_id = $2", [id, userId])
+
+      res.json({
+        success: true,
+        message: "Successfully unsubscribed from event",
+      })
+    } catch (error) {
+      console.error("[v0] Unsubscribe from event error:", error)
       res.status(500).json({
         success: false,
         message: "Internal server error",

@@ -1,210 +1,225 @@
-import transporter from "@/config/email"
-import { v4 as uuidv4 } from "uuid"
+import nodemailer from "nodemailer"
+import crypto from "crypto"
+
+interface EventDetails {
+  event_name: string
+  event_time: string
+  event_place: string
+  event_location: string
+  event_description?: string
+  event_type: string
+}
 
 export class EmailService {
+  private static transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number.parseInt(process.env.SMTP_PORT || "587"),
+    secure: process.env.SMTP_SECURE === "true",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  })
+
+  static generateToken(): string {
+    return crypto.randomBytes(32).toString("hex")
+  }
+
   static async sendVerificationEmail(email: string, name: string, token: string): Promise<void> {
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`
 
     const mailOptions = {
-      from: `${process.env.FROM_NAME} <${process.env.FROM_EMAIL}>`,
+      from: `"${process.env.FROM_NAME}" <${process.env.FROM_EMAIL}>`,
       to: email,
-      subject: "Verify Your Campus Connect NZ Account",
+      subject: "Verify Your Email - Campus Connect",
       html: `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Verify Your Account</title>
-        </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc; line-height: 1.6;">
-          <table role="presentation" style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 40px 20px;">
-                <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden;">
-                  
-                  <!-- Header -->
-                  <tr>
-                    <td style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 40px 40px 30px; text-align: center;">
-                      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.025em;">Campus Connect NZ</h1>
-                      <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0; font-size: 16px; font-weight: 400;">Auckland University of Technology</p>
-                    </td>
-                  </tr>
-                  
-                  <!-- Content -->
-                  <tr>
-                    <td style="padding: 40px;">
-                      <h2 style="color: #1f2937; margin: 0 0 24px; font-size: 24px; font-weight: 600; text-align: center;">Welcome to Campus Connect NZ!</h2>
-                      
-                      <p style="color: #374151; margin: 0 0 20px; font-size: 16px;">Dear ${name},</p>
-                      
-                      <p style="color: #374151; margin: 0 0 20px; font-size: 16px;">Thank you for joining Campus Connect NZ, the premier platform for AUT students to share knowledge, connect with peers, and excel in their academic journey.</p>
-                      
-                      <p style="color: #374151; margin: 0 0 32px; font-size: 16px;">To complete your registration and secure your account, please verify your email address by clicking the button below:</p>
-                      
-                      <!-- CTA Button -->
-                      <table role="presentation" style="width: 100%; margin: 32px 0;">
-                        <tr>
-                          <td style="text-align: center;">
-                            <a href="${verificationUrl}" style="display: inline-block; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; letter-spacing: 0.025em; box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.4); transition: all 0.2s;">
-                              ✓ Verify Email Address
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-                      
-                      <!-- Alternative Link -->
-                      <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 32px 0;">
-                        <p style="color: #6b7280; margin: 0 0 12px; font-size: 14px; font-weight: 500;">Alternative verification method:</p>
-                        <p style="color: #6b7280; margin: 0; font-size: 14px;">If the button above doesn't work, copy and paste this link into your browser:</p>
-                        <p style="word-break: break-all; color: #3b82f6; margin: 8px 0 0; font-size: 14px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;">${verificationUrl}</p>
-                      </div>
-                      
-                      <!-- Security Notice -->
-                      <div style="border-left: 4px solid #fbbf24; background-color: #fffbeb; padding: 16px; margin: 32px 0; border-radius: 0 8px 8px 0;">
-                        <p style="color: #92400e; margin: 0; font-size: 14px; font-weight: 500;">🔒 Security Notice</p>
-                        <p style="color: #92400e; margin: 8px 0 0; font-size: 14px;">This verification link will expire in 24 hours for your security. If you didn't create this account, please ignore this email.</p>
-                      </div>
-                    </td>
-                  </tr>
-                  
-                  <!-- Footer -->
-                  <tr>
-                    <td style="background-color: #f8fafc; padding: 32px 40px; border-top: 1px solid #e5e7eb;">
-                      <table role="presentation" style="width: 100%;">
-                        <tr>
-                          <td style="text-align: center;">
-                            <p style="color: #6b7280; margin: 0 0 16px; font-size: 14px; font-weight: 500;">Campus Connect NZ</p>
-                            <p style="color: #9ca3af; margin: 0 0 8px; font-size: 13px;">Connecting AUT students for academic success</p>
-                            <p style="color: #9ca3af; margin: 0; font-size: 13px;">Auckland University of Technology, New Zealand</p>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="text-align: center; padding-top: 24px;">
-                            <div style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
-                              <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-                                This email was sent to ${email}. If you have any questions, please contact our support team.
-                              </p>
-                            </div>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                  
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #7c3aed;">Welcome to Campus Connect, ${name}!</h2>
+          <p>Thank you for signing up. Please verify your email address by clicking the button below:</p>
+          <a href="${verificationUrl}" style="display: inline-block; padding: 12px 24px; background-color: #7c3aed; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">
+            Verify Email
+          </a>
+          <p>Or copy and paste this link into your browser:</p>
+          <p style="color: #666; word-break: break-all;">${verificationUrl}</p>
+          <p style="color: #999; font-size: 12px; margin-top: 30px;">
+            If you didn't create an account, please ignore this email.
+          </p>
+        </div>
       `,
     }
 
-    await transporter.sendMail(mailOptions)
+    await this.transporter.sendMail(mailOptions)
   }
 
   static async sendPasswordResetEmail(email: string, name: string, token: string): Promise<void> {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
 
     const mailOptions = {
-      from: `${process.env.FROM_NAME} <${process.env.FROM_EMAIL}>`,
+      from: `"${process.env.FROM_NAME}" <${process.env.FROM_EMAIL}>`,
       to: email,
-      subject: "Reset Your Campus Connect NZ Password",
+      subject: "Reset Your Password - Campus Connect",
       html: `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Reset Your Password</title>
-        </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc; line-height: 1.6;">
-          <table role="presentation" style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 40px 20px;">
-                <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden;">
-                  
-                  <!-- Header -->
-                  <tr>
-                    <td style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); padding: 40px 40px 30px; text-align: center;">
-                      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.025em;">Campus Connect NZ</h1>
-                      <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0; font-size: 16px; font-weight: 400;">Password Reset Request</p>
-                    </td>
-                  </tr>
-                  
-                  <!-- Content -->
-                  <tr>
-                    <td style="padding: 40px;">
-                      <h2 style="color: #1f2937; margin: 0 0 24px; font-size: 24px; font-weight: 600; text-align: center;">Reset Your Password</h2>
-                      
-                      <p style="color: #374151; margin: 0 0 20px; font-size: 16px;">Dear ${name},</p>
-                      
-                      <p style="color: #374151; margin: 0 0 20px; font-size: 16px;">We received a request to reset the password for your Campus Connect NZ account. If you made this request, click the button below to create a new password:</p>
-                      
-                      <!-- CTA Button -->
-                      <table role="presentation" style="width: 100%; margin: 32px 0;">
-                        <tr>
-                          <td style="text-align: center;">
-                            <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; letter-spacing: 0.025em; box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.4);">
-                              🔐 Reset Password
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-                      
-                      <!-- Alternative Link -->
-                      <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 32px 0;">
-                        <p style="color: #6b7280; margin: 0 0 12px; font-size: 14px; font-weight: 500;">Alternative reset method:</p>
-                        <p style="color: #6b7280; margin: 0; font-size: 14px;">Copy and paste this link into your browser:</p>
-                        <p style="word-break: break-all; color: #dc2626; margin: 8px 0 0; font-size: 14px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;">${resetUrl}</p>
-                      </div>
-                      
-                      <!-- Security Notice -->
-                      <div style="border-left: 4px solid #ef4444; background-color: #fef2f2; padding: 16px; margin: 32px 0; border-radius: 0 8px 8px 0;">
-                        <p style="color: #b91c1c; margin: 0; font-size: 14px; font-weight: 500;">🚨 Important Security Information</p>
-                        <p style="color: #b91c1c; margin: 8px 0 0; font-size: 14px;">This reset link expires in 1 hour and can only be used once. If you didn't request this password reset, please ignore this email - your password will remain unchanged.</p>
-                      </div>
-                    </td>
-                  </tr>
-                  
-                  <!-- Footer -->
-                  <tr>
-                    <td style="background-color: #f8fafc; padding: 32px 40px; border-top: 1px solid #e5e7eb;">
-                      <table role="presentation" style="width: 100%;">
-                        <tr>
-                          <td style="text-align: center;">
-                            <p style="color: #6b7280; margin: 0 0 16px; font-size: 14px; font-weight: 500;">Campus Connect NZ</p>
-                            <p style="color: #9ca3af; margin: 0 0 8px; font-size: 13px;">Connecting AUT students for academic success</p>
-                            <p style="color: #9ca3af; margin: 0; font-size: 13px;">Auckland University of Technology, New Zealand</p>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="text-align: center; padding-top: 24px;">
-                            <div style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
-                              <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-                                This email was sent to ${email}. If you have any questions, please contact our support team.
-                              </p>
-                            </div>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                  
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #7c3aed;">Password Reset Request</h2>
+          <p>Hi ${name},</p>
+          <p>We received a request to reset your password. Click the button below to create a new password:</p>
+          <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #7c3aed; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">
+            Reset Password
+          </a>
+          <p>Or copy and paste this link into your browser:</p>
+          <p style="color: #666; word-break: break-all;">${resetUrl}</p>
+          <p style="color: #999; font-size: 12px; margin-top: 30px;">
+            This link will expire in 1 hour. If you didn't request a password reset, please ignore this email.
+          </p>
+        </div>
       `,
     }
 
-    await transporter.sendMail(mailOptions)
+    await this.transporter.sendMail(mailOptions)
   }
-  
-  static generateToken(): string {
-    return uuidv4()
+
+  static async sendEventSubscriptionEmail(email: string, name: string, eventDetails: EventDetails): Promise<void> {
+    const eventDate = new Date(eventDetails.event_time)
+    const formattedDate = eventDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+    const formattedTime = eventDate.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })
+
+    // Generate ICS calendar file content
+    const icsContent = this.generateICSFile(eventDetails)
+    const icsBase64 = Buffer.from(icsContent).toString("base64")
+
+    const mailOptions = {
+      from: `"${process.env.FROM_NAME}" <${process.env.FROM_EMAIL}>`,
+      to: email,
+      subject: `Event Subscription Confirmed: ${eventDetails.event_name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🎉 You're Subscribed!</h1>
+          </div>
+          
+          <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">Hi ${name},</p>
+            <p style="font-size: 16px; color: #374151; margin-bottom: 30px;">
+              You've successfully subscribed to the following event. We'll send you a reminder before it starts!
+            </p>
+            
+            <div style="background: white; padding: 25px; border-radius: 8px; border-left: 4px solid #7c3aed; margin-bottom: 25px;">
+              <h2 style="color: #7c3aed; margin-top: 0; font-size: 22px;">${eventDetails.event_name}</h2>
+              
+              <div style="margin: 15px 0;">
+                <p style="margin: 8px 0; color: #4b5563;">
+                  <strong style="color: #1f2937;">📅 Date:</strong> ${formattedDate}
+                </p>
+                <p style="margin: 8px 0; color: #4b5563;">
+                  <strong style="color: #1f2937;">🕐 Time:</strong> ${formattedTime}
+                </p>
+                <p style="margin: 8px 0; color: #4b5563;">
+                  <strong style="color: #1f2937;">📍 Location:</strong> ${eventDetails.event_place}
+                </p>
+                <p style="margin: 8px 0; color: #4b5563;">
+                  <strong style="color: #1f2937;">🗺️ Address:</strong> ${eventDetails.event_location}
+                </p>
+                <p style="margin: 8px 0; color: #4b5563;">
+                  <strong style="color: #1f2937;">🏷️ Type:</strong> <span style="background: #ede9fe; color: #7c3aed; padding: 4px 12px; border-radius: 12px; text-transform: capitalize;">${eventDetails.event_type}</span>
+                </p>
+              </div>
+              
+              ${
+                eventDetails.event_description
+                  ? `
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                  <p style="margin: 0; color: #4b5563; line-height: 1.6;">
+                    <strong style="color: #1f2937;">About this event:</strong><br/>
+                    ${eventDetails.event_description}
+                  </p>
+                </div>
+              `
+                  : ""
+              }
+            </div>
+            
+            <div style="background: #eff6ff; padding: 20px; border-radius: 8px; border: 1px solid #bfdbfe; margin-bottom: 25px;">
+              <p style="margin: 0 0 15px 0; color: #1e40af; font-weight: 600;">📆 Add to Your Calendar</p>
+              <p style="margin: 0 0 15px 0; color: #1e3a8a; font-size: 14px;">
+                The calendar file is attached to this email. Simply open it to add this event to your calendar app (Google Calendar, Outlook, Apple Calendar, etc.)
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                See you at the event! 🎊
+              </p>
+            </div>
+          </div>
+          
+          <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+            <p style="margin: 5px 0;">Campus Connect - Connecting Students, One Event at a Time</p>
+            <p style="margin: 5px 0;">If you didn't subscribe to this event, please ignore this email.</p>
+          </div>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: `${eventDetails.event_name.replace(/[^a-z0-9]/gi, "_")}.ics`,
+          content: icsBase64,
+          encoding: "base64",
+          contentType: "text/calendar",
+        },
+      ],
+    }
+
+    await this.transporter.sendMail(mailOptions)
+  }
+
+  private static generateICSFile(eventDetails: EventDetails): string {
+    const eventDate = new Date(eventDetails.event_time)
+
+    // Format dates for ICS (YYYYMMDDTHHMMSSZ)
+    const formatICSDate = (date: Date): string => {
+      return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z"
+    }
+
+    const startDate = formatICSDate(eventDate)
+    // Assume 2-hour duration for events
+    const endDate = formatICSDate(new Date(eventDate.getTime() + 2 * 60 * 60 * 1000))
+
+    // Create alarm for 1 hour before event
+    const alarmDate = formatICSDate(new Date(eventDate.getTime() - 60 * 60 * 1000))
+
+    const icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Campus Connect//Event Subscription//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "BEGIN:VEVENT",
+      `UID:${crypto.randomUUID()}@campusconnect.com`,
+      `DTSTAMP:${formatICSDate(new Date())}`,
+      `DTSTART:${startDate}`,
+      `DTEND:${endDate}`,
+      `SUMMARY:${eventDetails.event_name}`,
+      `DESCRIPTION:${eventDetails.event_description || "Campus Connect Event"}`,
+      `LOCATION:${eventDetails.event_place}, ${eventDetails.event_location}`,
+      "STATUS:CONFIRMED",
+      "SEQUENCE:0",
+      "BEGIN:VALARM",
+      "TRIGGER:-PT1H",
+      "ACTION:DISPLAY",
+      `DESCRIPTION:Reminder: ${eventDetails.event_name} starts in 1 hour`,
+      "END:VALARM",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n")
+
+    return icsContent
   }
 }
