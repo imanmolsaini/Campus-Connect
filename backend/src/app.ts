@@ -18,6 +18,9 @@ import dealRoutes from "@/routes/deals" // Added deals routes
 import jobRoutes from "@/routes/jobs" // Added jobs routes
 import eventRoutes from "@/routes/events" // Added events routes
 import communityRoutes from "@/routes/community" // Added community routes
+import friendRequestRoutes from "@/routes/friendRequests" // Added friend requests routes
+import chatRoutes from "@/routes/chat" // Added chat routes
+import groupChatRoutes from "@/routes/groupChat" // Added group chat routes
 
 // Load environment variables
 dotenv.config()
@@ -76,6 +79,9 @@ app.use("/api/deals", dealRoutes) // Added deals API route
 app.use("/api/jobs", jobRoutes) // Added jobs API route
 app.use("/api/events", eventRoutes) // Added events API route
 app.use("/api/community", communityRoutes) // Added community API route
+app.use("/api/friend-requests", friendRequestRoutes) // Added friend requests API route
+app.use("/api/chat", chatRoutes) // Added chat API route
+app.use("/api/groups", groupChatRoutes) // Added group chat API route
 
 // 404 handler
 app.use("*", (req, res) => {
