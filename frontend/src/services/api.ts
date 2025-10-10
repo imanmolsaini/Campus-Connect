@@ -16,6 +16,13 @@ import type {
   Event,
   CommunityQuestion,
   CommunityReply,
+  FriendRequest,
+  Friend,
+  Message,
+  Conversation,
+  Group,
+  GroupMessage,
+  GroupMember,
 } from "@/types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
@@ -534,6 +541,143 @@ export const communityAPI = {
   },
   deleteReply: async (replyId: string): Promise<ApiResponse> => {
     const response: AxiosResponse<ApiResponse> = await api.delete(`/community/replies/${replyId}`)
+    return response.data
+  },
+}
+
+// Friend Request API
+export const friendRequestAPI = {
+  sendFriendRequest: async (email: string): Promise<ApiResponse<{ friendRequest: FriendRequest; receiver: User }>> => {
+    const response: AxiosResponse<ApiResponse<{ friendRequest: FriendRequest; receiver: User }>> = await api.post(
+      "/friend-requests",
+      { email },
+    )
+    return response.data
+  },
+
+  getFriendRequests: async (): Promise<ApiResponse<{ received: FriendRequest[]; sent: FriendRequest[] }>> => {
+    const response: AxiosResponse<ApiResponse<{ received: FriendRequest[]; sent: FriendRequest[] }>> =
+      await api.get("/friend-requests")
+    return response.data
+  },
+
+  acceptFriendRequest: async (requestId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(`/friend-requests/${requestId}/accept`)
+    return response.data
+  },
+
+  rejectFriendRequest: async (requestId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(`/friend-requests/${requestId}/reject`)
+    return response.data
+  },
+
+  getFriends: async (): Promise<ApiResponse<{ friends: Friend[] }>> => {
+    const response: AxiosResponse<ApiResponse<{ friends: Friend[] }>> = await api.get("/friend-requests/friends")
+    return response.data
+  },
+
+  removeFriend: async (friendId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/friend-requests/friends/${friendId}`)
+    return response.data
+  },
+}
+
+// Chat API
+export const chatAPI = {
+  sendMessage: async (receiverId: string, message: string): Promise<ApiResponse<{ message: Message }>> => {
+    const response: AxiosResponse<ApiResponse<{ message: Message }>> = await api.post("/chat/messages", {
+      receiverId,
+      message,
+    })
+    return response.data
+  },
+
+  getConversations: async (): Promise<ApiResponse<{ conversations: Conversation[] }>> => {
+    const response: AxiosResponse<ApiResponse<{ conversations: Conversation[] }>> = await api.get("/chat/conversations")
+    return response.data
+  },
+
+  getConversation: async (
+    friendId: string,
+    params?: { limit?: number; offset?: number },
+  ): Promise<ApiResponse<{ messages: Message[]; hasMore: boolean }>> => {
+    const response: AxiosResponse<ApiResponse<{ messages: Message[]; hasMore: boolean }>> = await api.get(
+      `/chat/conversations/${friendId}`,
+      { params },
+    )
+    return response.data
+  },
+
+  markAsRead: async (friendId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(`/chat/conversations/${friendId}/read`)
+    return response.data
+  },
+
+  getUnreadCount: async (): Promise<ApiResponse<{ unreadCount: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ unreadCount: number }>> = await api.get("/chat/unread-count")
+    return response.data
+  },
+}
+
+// Group Chat API
+export const groupChatAPI = {
+  createGroup: async (data: {
+    name: string
+    memberEmails: string[]
+  }): Promise<ApiResponse<{ group: Group & { members: GroupMember[]; notFoundEmails?: string[] } }>> => {
+    const response: AxiosResponse<
+      ApiResponse<{ group: Group & { members: GroupMember[]; notFoundEmails?: string[] } }>
+    > = await api.post("/groups/create", data)
+    return response.data
+  },
+
+  getUserGroups: async (): Promise<ApiResponse<{ groups: Group[] }>> => {
+    const response: AxiosResponse<ApiResponse<{ groups: Group[] }>> = await api.get("/groups")
+    return response.data
+  },
+
+  sendGroupMessage: async (groupId: string, message: string): Promise<ApiResponse<{ message: GroupMessage }>> => {
+    const response: AxiosResponse<ApiResponse<{ message: GroupMessage }>> = await api.post("/groups/message", {
+      groupId,
+      message,
+    })
+    return response.data
+  },
+
+  getGroupConversation: async (
+    groupId: string,
+    params?: { limit?: number; offset?: number },
+  ): Promise<ApiResponse<{ messages: GroupMessage[]; hasMore: boolean }>> => {
+    const response: AxiosResponse<ApiResponse<{ messages: GroupMessage[]; hasMore: boolean }>> = await api.get(
+      `/groups/${groupId}/messages`,
+      { params },
+    )
+    return response.data
+  },
+
+  getGroupMembers: async (groupId: string): Promise<ApiResponse<{ members: GroupMember[] }>> => {
+    const response: AxiosResponse<ApiResponse<{ members: GroupMember[] }>> = await api.get(`/groups/${groupId}/members`)
+    return response.data
+  },
+
+  addGroupMembers: async (
+    groupId: string,
+    memberEmails: string[],
+  ): Promise<ApiResponse<{ addedMembers: GroupMember[] }>> => {
+    const response: AxiosResponse<ApiResponse<{ addedMembers: GroupMember[] }>> = await api.post(
+      `/groups/${groupId}/members`,
+      { memberEmails },
+    )
+    return response.data
+  },
+
+  leaveGroup: async (groupId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/groups/${groupId}/leave`)
+    return response.data
+  },
+
+  deleteGroup: async (groupId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/groups/${groupId}`)
     return response.data
   },
 }

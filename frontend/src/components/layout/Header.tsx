@@ -21,9 +21,10 @@ import {
   Briefcase,
   Calendar,
   Bell,
+  MessageCircle,
 } from "lucide-react"
 import { DealNotifications } from "@/components/ui/DealNotifications"
-import { dealAPI } from "@/services/api"
+import { dealAPI, chatAPI } from "@/services/api"
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth()
@@ -31,6 +32,7 @@ export const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [unseenCount, setUnseenCount] = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
 
   const handleLogout = () => {
     logout()
@@ -40,11 +42,26 @@ export const Header: React.FC = () => {
   useEffect(() => {
     if (user) {
       checkForNewDeals()
-      // Poll for new deals every 30 seconds
-      const interval = setInterval(checkForNewDeals, 30000)
+      checkUnreadMessages()
+      // Poll for new deals and messages every 30 seconds
+      const interval = setInterval(() => {
+        checkForNewDeals()
+        checkUnreadMessages()
+      }, 30000)
       return () => clearInterval(interval)
     }
   }, [user])
+
+  const checkUnreadMessages = async () => {
+    try {
+      const response = await chatAPI.getUnreadCount()
+      if (response.success && response.data) {
+        setUnreadMessages(response.data.unreadCount)
+      }
+    } catch (error) {
+      console.error("Failed to check unread messages:", error)
+    }
+  }
 
   const checkForNewDeals = async () => {
     try {
@@ -81,6 +98,7 @@ export const Header: React.FC = () => {
         { name: "Deals", href: "/deals", icon: DollarSign },
         { name: "Jobs/Voluntary", href: "/jobs", icon: Briefcase },
         { name: "Events", href: "/events", icon: Calendar },
+        { name: "Chat", href: "/chat", icon: MessageCircle },
       ]
     : []
 
@@ -106,10 +124,15 @@ export const Header: React.FC = () => {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center space-x-1 text-white/90 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all duration-300 backdrop-blur-sm"
+                  className="flex items-center space-x-1 text-white/90 hover:text-white hover:bg-white/10 px-3 py-2 rounded-lg transition-all duration-300 backdrop-blur-sm relative"
                 >
                   <Icon className="w-4 h-4" />
                   <span>{item.name}</span>
+                  {item.name === "Chat" && unreadMessages > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg">
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
                 </Link>
               )
             })}
@@ -204,11 +227,16 @@ export const Header: React.FC = () => {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300"
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-white/90 hover:text-white hover:bg-white/10 transition-all duration-300 relative"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Icon className="w-4 h-4" />
                     <span>{item.name}</span>
+                    {item.name === "Chat" && unreadMessages > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                        {unreadMessages}
+                      </span>
+                    )}
                   </Link>
                 )
               })}
