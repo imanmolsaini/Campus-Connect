@@ -334,3 +334,82 @@ export interface CommunityQuestionForm {
 export interface CommunityReplyForm {
   content: string
 }
+
+// Friend Request types
+export interface FriendRequest {
+  id: string
+  sender_id: string
+  receiver_id: string
+  status: "pending" | "accepted" | "rejected"
+  sender_name?: string
+  sender_email?: string
+  receiver_name?: string
+  receiver_email?: string
+  created_at: string
+}
+
+// Friend types
+export interface Friend {
+  friend_id: string
+  friend_name: string
+  friend_email: string
+  friends_since: string
+}
+
+// Message types
+export interface Message {
+  id: string
+  sender_id: string
+  receiver_id: string
+  message: string
+  is_read: boolean
+  sender_name?: string
+  created_at: string
+}
+
+export interface GroupMessage {
+  id: string
+  sender_id: string
+  group_id: string
+  message: string
+  is_group_message: boolean
+  is_read: boolean
+  sender_name?: string
+  created_at: string
+}
+
+// Conversation types
+export interface Conversation {
+  friend_id: string
+  friend_name: string
+  friend_email: string
+  last_message?: string
+  last_message_time?: string
+  last_sender_id?: string
+  unread_count: number
+}
+
+export interface Group {
+  id: string
+  name: string
+  created_by: string
+  created_at: string
+  updated_at: string
+  last_message?: string
+  last_message_time?: string
+  last_sender_id?: string
+  last_sender_name?: string
+  member_count: number
+}
+
+export interface GroupMember {
+  id: string
+  name: string
+  email: string
+  joined_at: string
+}
+
+export interface GroupForm {
+  name: string
+  memberEmails: string[]
+}
