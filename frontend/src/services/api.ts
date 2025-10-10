@@ -466,6 +466,14 @@ export const eventAPI = {
     const response: AxiosResponse<ApiResponse> = await api.post(`/events/${id}/interest`, { interest_type })
     return response.data
   },
+  subscribeToEvent: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post(`/events/${id}/subscribe`)
+    return response.data
+  },
+  unsubscribeFromEvent: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/events/${id}/subscribe`)
+    return response.data
+  },
   deleteEvent: async (id: string): Promise<ApiResponse> => {
     const response: AxiosResponse<ApiResponse> = await api.delete(`/events/${id}`)
     return response.data

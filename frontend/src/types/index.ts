@@ -142,6 +142,7 @@ export interface Event {
   interested_count: number // From aggregation
   not_interested_count: number // From aggregation
   user_interest?: "interested" | "not_interested" // User's current interest
+  is_subscribed?: boolean // Added subscription status
   created_at: string
   updated_at: string
 }

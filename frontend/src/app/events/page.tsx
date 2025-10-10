@@ -11,7 +11,20 @@ import { VotingButtons } from "@/components/ui/VotingButtons"
 import { useAuth } from "@/contexts/AuthContext"
 import { eventAPI } from "@/services/api"
 import type { Event, EventForm } from "@/types"
-import { PlusCircle, Search, MapPin, Calendar, Clock, User, Trash2, Filter, X, CalendarDays } from "lucide-react"
+import {
+  PlusCircle,
+  Search,
+  MapPin,
+  Calendar,
+  Clock,
+  User,
+  Trash2,
+  Filter,
+  X,
+  CalendarDays,
+  Bell,
+  BellOff,
+} from "lucide-react"
 import { format, isBefore } from "date-fns"
 
 const EVENT_TYPES = [
@@ -43,6 +56,7 @@ export default function EventsPage() {
   const [sortBy, setSortBy] = useState("upcoming")
   const [interestingEventId, setInterestingEventId] = useState<string | null>(null)
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
+  const [subscribingEventId, setSubscribingEventId] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null)
 
   const {
@@ -59,17 +73,29 @@ export default function EventsPage() {
   const loadEvents = async () => {
     setLoading(true)
     try {
+      console.log("[v0] Loading events with filters:", { searchTerm, selectedType, sortBy })
       const response = await eventAPI.getEvents({
         search: searchTerm,
         event_type: selectedType,
         sort: sortBy,
       })
       if (response.success && response.data) {
+        console.log("[v0] Events loaded successfully:", response.data.events.length, "events")
         setEvents(response.data.events)
+      } else {
+        console.error("[v0] Failed to load events - response not successful:", response)
+        toast.error(response.message || "Failed to load events.")
       }
-    } catch (error) {
-      console.error("Failed to load events:", error)
-      toast.error("Failed to load events.")
+    } catch (error: any) {
+      console.error("[v0] Failed to load events - error:", error)
+      console.error("[v0] Error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      })
+      toast.error(
+        error.response?.data?.message || "Failed to load events. Please check if the backend server is running.",
+      )
     } finally {
       setLoading(false)
     }
@@ -113,6 +139,33 @@ export default function EventsPage() {
       toast.error(error.response?.data?.message || "Failed to mark interest.")
     } finally {
       setInterestingEventId(null)
+    }
+  }
+
+  const handleSubscribe = async (eventId: string, isSubscribed: boolean) => {
+    if (!user) {
+      toast.error("Please login to subscribe to events.")
+      return
+    }
+
+    setSubscribingEventId(eventId)
+    try {
+      const response = isSubscribed
+        ? await eventAPI.unsubscribeFromEvent(eventId)
+        : await eventAPI.subscribeToEvent(eventId)
+
+      if (response.success) {
+        toast.success(response.message || (isSubscribed ? "Unsubscribed successfully!" : "Subscribed successfully!"))
+        console.log("[v0] Subscription status changed for event:", eventId)
+        loadEvents()
+      } else {
+        toast.error(response.message || "Failed to update subscription.")
+      }
+    } catch (error: any) {
+      console.error("[v0] Subscribe error:", error)
+      toast.error(error.response?.data?.message || "Failed to update subscription.")
+    } finally {
+      setSubscribingEventId(null)
     }
   }
 
@@ -362,6 +415,12 @@ export default function EventsPage() {
                                 Past Event
                               </span>
                             )}
+                            {event.is_subscribed && (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <Bell className="w-3 h-3 mr-1" />
+                                Subscribed
+                              </span>
+                            )}
                           </div>
 
                           <div className="space-y-2 mb-4">
@@ -393,6 +452,31 @@ export default function EventsPage() {
                           </div>
 
                           <div className="flex items-center space-x-4">
+                            {user && !isPastEvent && (
+                              <Button
+                                variant={event.is_subscribed ? "outline" : "primary"}
+                                size="sm"
+                                onClick={() => handleSubscribe(event.id, event.is_subscribed || false)}
+                                loading={subscribingEventId === event.id}
+                                className={
+                                  event.is_subscribed
+                                    ? "text-gray-700 hover:text-red-600 hover:border-red-600"
+                                    : "bg-purple-600 hover:bg-purple-700 text-white"
+                                }
+                              >
+                                {event.is_subscribed ? (
+                                  <>
+                                    <BellOff className="w-4 h-4 mr-1.5" />
+                                    Unsubscribe
+                                  </>
+                                ) : (
+                                  <>
+                                    <Bell className="w-4 h-4 mr-1.5" />
+                                    Subscribe
+                                  </>
+                                )}
+                              </Button>
+                            )}
                             {(user?.role === "admin" || user?.id === event.user_id) && (
                               <Button
                                 variant="ghost"
