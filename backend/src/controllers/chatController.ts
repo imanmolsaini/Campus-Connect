@@ -1,23 +1,38 @@
 import type { Response } from "express"
 import pool from "@/config/database"
 import type { AuthenticatedRequest, ApiResponse } from "@/types"
+import fs from "fs"
+import path from "path"
+import archiver from "archiver"
 
 export class ChatController {
   // Send a message to a friend
   static async sendMessage(req: AuthenticatedRequest, res: Response<ApiResponse>): Promise<void> {
     try {
       const senderId = req.user!.id
-      const { receiverId, message } = req.body
+      const receiverId = req.body.receiverId
+      const content = req.body.message?.trim()
+      const file = req.file
 
-      if (!receiverId || !message) {
+      console.log("[v0] sendMessage called:", {
+        senderId,
+        receiverId,
+        content,
+        hasFile: !!file,
+        body: req.body,
+      })
+
+      if (!receiverId || typeof receiverId !== "string" || !receiverId.trim()) {
+        console.log("[v0] Invalid receiver ID:", req.body.receiverId)
         res.status(400).json({
           success: false,
-          message: "Receiver ID and message are required",
+          message: "Invalid receiver ID",
         })
         return
       }
 
-      if (!message.trim()) {
+      // Validate that either content or file is provided
+      if (!content && !file) {
         res.status(400).json({
           success: false,
           message: "Message cannot be empty",
@@ -25,9 +40,10 @@ export class ChatController {
         return
       }
 
-      // Check if users are friends
-      const user1Id = senderId < receiverId ? senderId : receiverId
-      const user2Id = senderId < receiverId ? receiverId : senderId
+      const user1Id = senderId.localeCompare(receiverId) < 0 ? senderId : receiverId
+      const user2Id = senderId.localeCompare(receiverId) < 0 ? receiverId : senderId
+
+      console.log("[v0] Checking friendship:", { user1Id, user2Id })
 
       const friendshipCheck = await pool.query("SELECT id FROM friendships WHERE user1_id = $1 AND user2_id = $2", [
         user1Id,
@@ -35,6 +51,7 @@ export class ChatController {
       ])
 
       if (friendshipCheck.rows.length === 0) {
+        console.log("[v0] Not friends")
         res.status(403).json({
           success: false,
           message: "You can only send messages to your friends",
@@ -42,13 +59,25 @@ export class ChatController {
         return
       }
 
-      // Insert message
+      console.log("[v0] Inserting message into database")
+
+      // Insert message with optional attachment
       const result = await pool.query(
-        `INSERT INTO messages (sender_id, receiver_id, message) 
-         VALUES ($1, $2, $3) 
-         RETURNING id, sender_id, receiver_id, message, is_read, created_at`,
-        [senderId, receiverId, message.trim()],
+        `INSERT INTO messages (sender_id, receiver_id, message, attachment_path, attachment_name, attachment_size, attachment_type) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) 
+         RETURNING id, sender_id, receiver_id, message, attachment_path, attachment_name, attachment_size, attachment_type, is_read, created_at`,
+        [
+          senderId,
+          receiverId,
+          content || null,
+          file ? file.path : null,
+          file ? file.originalname : null,
+          file ? file.size : null,
+          file ? file.mimetype : null,
+        ],
       )
+
+      console.log("[v0] Message inserted successfully:", result.rows[0])
 
       res.status(201).json({
         success: true,
@@ -58,7 +87,7 @@ export class ChatController {
         },
       })
     } catch (error) {
-      console.error("Send message error:", error)
+      console.error("[v0] Send message error:", error)
       res.status(500).json({
         success: false,
         message: "Internal server error",
@@ -74,9 +103,8 @@ export class ChatController {
       const limit = Number.parseInt(req.query.limit as string) || 50
       const offset = Number.parseInt(req.query.offset as string) || 0
 
-      // Check if users are friends
-      const user1Id = userId < friendId ? userId : friendId
-      const user2Id = userId < friendId ? friendId : userId
+      const user1Id = userId.localeCompare(friendId) < 0 ? userId : friendId
+      const user2Id = userId.localeCompare(friendId) < 0 ? friendId : userId
 
       const friendshipCheck = await pool.query("SELECT id FROM friendships WHERE user1_id = $1 AND user2_id = $2", [
         user1Id,
@@ -91,9 +119,10 @@ export class ChatController {
         return
       }
 
-      // Get messages
+      // Get messages with attachment info
       const result = await pool.query(
-        `SELECT m.id, m.sender_id, m.receiver_id, m.message, m.is_read, m.created_at,
+        `SELECT m.id, m.sender_id, m.receiver_id, m.message, m.attachment_path, m.attachment_name, 
+                m.attachment_size, m.attachment_type, m.is_read, m.created_at,
                 u.name as sender_name
          FROM messages m
          JOIN users u ON m.sender_id = u.id
@@ -257,6 +286,105 @@ export class ChatController {
         success: false,
         message: "Internal server error",
       })
+    }
+  }
+
+  // Download attachment
+  static async downloadAttachment(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.id
+      const { messageId } = req.params
+
+      // Get message and verify user has access (sender or receiver)
+      const result = await pool.query(
+        `SELECT m.*, 
+                (m.sender_id = $1 OR m.receiver_id = $1) as has_access
+         FROM messages m
+         WHERE m.id = $2`,
+        [userId, messageId],
+      )
+
+      if (result.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          message: "Message not found",
+        })
+        return
+      }
+
+      const message = result.rows[0]
+
+      if (!message.has_access) {
+        res.status(403).json({
+          success: false,
+          message: "You don't have access to this attachment",
+        })
+        return
+      }
+
+      if (!message.attachment_path) {
+        res.status(404).json({
+          success: false,
+          message: "No attachment found for this message",
+        })
+        return
+      }
+
+      const absoluteFilePath = path.isAbsolute(message.attachment_path)
+        ? message.attachment_path
+        : path.resolve(process.cwd(), message.attachment_path)
+
+      // Check if file exists
+      if (!fs.existsSync(absoluteFilePath)) {
+        res.status(404).json({
+          success: false,
+          message: "Attachment file not found",
+        })
+        return
+      }
+
+      const originalExtension = path.extname(message.attachment_path)
+      const sanitizedName = (message.attachment_name || "attachment").replace(/[^a-zA-Z0-9\s\-_.]/g, "").trim()
+      const originalFileName = sanitizedName
+      const zipFileName = `${sanitizedName.replace(/\.[^/.]+$/, "")}.zip`
+
+      // Set headers for ZIP download
+      res.setHeader("Content-Type", "application/zip")
+      res.setHeader("Content-Disposition", `attachment; filename="${zipFileName}"`)
+      res.setHeader("Cache-Control", "no-cache")
+
+      // Create ZIP archive
+      const archive = archiver("zip", {
+        zlib: { level: 9 }, // Maximum compression
+      })
+
+      // Handle archive errors
+      archive.on("error", (err) => {
+        console.error("Archive error:", err)
+        if (!res.headersSent) {
+          res.status(500).json({
+            success: false,
+            message: "Failed to create ZIP file",
+          })
+        }
+      })
+
+      // Pipe archive to response
+      archive.pipe(res)
+
+      // Add the original file to the ZIP with its original name
+      archive.file(absoluteFilePath, { name: originalFileName })
+
+      // Finalize the archive
+      await archive.finalize()
+    } catch (error) {
+      console.error("Download attachment error:", error)
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+        })
+      }
     }
   }
 }

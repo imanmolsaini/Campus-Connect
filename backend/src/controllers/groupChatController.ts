@@ -105,16 +105,26 @@ export class GroupChatController {
     try {
       const senderId = req.user!.id
       const { groupId, message } = req.body
+      const file = req.file
 
-      if (!groupId || !message) {
+      if (!groupId) {
         res.status(400).json({
           success: false,
-          message: "Group ID and message are required",
+          message: "Group ID is required",
         })
         return
       }
 
-      if (!message.trim()) {
+      // Either message or file must be provided
+      if (!message && !file) {
+        res.status(400).json({
+          success: false,
+          message: "Message or file attachment is required",
+        })
+        return
+      }
+
+      if (message && !message.trim() && !file) {
         res.status(400).json({
           success: false,
           message: "Message cannot be empty",
@@ -136,12 +146,20 @@ export class GroupChatController {
         return
       }
 
-      // Insert message
+      // Insert message with optional attachment
       const result = await pool.query(
-        `INSERT INTO messages (sender_id, group_id, message, is_group_message) 
-         VALUES ($1, $2, $3, TRUE) 
-         RETURNING id, sender_id, group_id, message, is_group_message, is_read, created_at`,
-        [senderId, groupId, message.trim()],
+        `INSERT INTO messages (sender_id, group_id, message, is_group_message, attachment_path, attachment_name, attachment_size, attachment_type) 
+         VALUES ($1, $2, $3, TRUE, $4, $5, $6, $7) 
+         RETURNING id, sender_id, group_id, message, is_group_message, attachment_path, attachment_name, attachment_size, attachment_type, is_read, created_at`,
+        [
+          senderId,
+          groupId,
+          message?.trim() || null,
+          file ? file.path : null,
+          file ? file.originalname : null,
+          file ? file.size : null,
+          file ? file.mimetype : null,
+        ],
       )
 
       res.status(201).json({
@@ -182,9 +200,10 @@ export class GroupChatController {
         return
       }
 
-      // Get messages
+      // Get messages with attachment info
       const result = await pool.query(
-        `SELECT m.id, m.sender_id, m.group_id, m.message, m.is_read, m.created_at,
+        `SELECT m.id, m.sender_id, m.group_id, m.message, m.attachment_path, m.attachment_name,
+                m.attachment_size, m.attachment_type, m.is_read, m.created_at,
                 u.name as sender_name
          FROM messages m
          JOIN users u ON m.sender_id = u.id
