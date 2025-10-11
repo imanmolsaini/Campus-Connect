@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎓 Campus Connect NZ
+# 🎓Campus Connect NZ
 
 **A Comprehensive Academic Platform for AUT University Students**
 
