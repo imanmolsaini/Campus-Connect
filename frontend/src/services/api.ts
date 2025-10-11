@@ -584,10 +584,24 @@ export const friendRequestAPI = {
 
 // Chat API
 export const chatAPI = {
-  sendMessage: async (receiverId: string, message: string): Promise<ApiResponse<{ message: Message }>> => {
-    const response: AxiosResponse<ApiResponse<{ message: Message }>> = await api.post("/chat/messages", {
-      receiverId,
-      message,
+  sendMessage: async (
+    receiverId: string,
+    message?: string,
+    file?: File,
+  ): Promise<ApiResponse<{ message: Message }>> => {
+    const formData = new FormData()
+    formData.append("receiverId", receiverId)
+    if (message) {
+      formData.append("message", message)
+    }
+    if (file) {
+      formData.append("attachment", file)
+    }
+
+    const response: AxiosResponse<ApiResponse<{ message: Message }>> = await api.post("/chat/messages", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     })
     return response.data
   },
@@ -617,6 +631,40 @@ export const chatAPI = {
     const response: AxiosResponse<ApiResponse<{ unreadCount: number }>> = await api.get("/chat/unread-count")
     return response.data
   },
+
+  downloadAttachment: async (messageId: string): Promise<void> => {
+    const response = await api.get(`/chat/attachments/${messageId}`, {
+      responseType: "blob",
+    })
+
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement("a")
+    link.href = url
+
+    let filename = "attachment.zip" // Default fallback with .zip extension
+
+    const contentDisposition = response.headers["content-disposition"]
+    if (contentDisposition) {
+      // Try multiple patterns to extract filename
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, "")
+      }
+    }
+
+    // Ensure filename has .zip extension
+    if (!filename.toLowerCase().endsWith(".zip")) {
+      const nameWithoutExt = filename.replace(/\.[^/.]+$/, "")
+      filename = `${nameWithoutExt}.zip`
+    }
+
+    link.setAttribute("download", filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  },
 }
 
 // Group Chat API
@@ -636,11 +684,29 @@ export const groupChatAPI = {
     return response.data
   },
 
-  sendGroupMessage: async (groupId: string, message: string): Promise<ApiResponse<{ message: GroupMessage }>> => {
-    const response: AxiosResponse<ApiResponse<{ message: GroupMessage }>> = await api.post("/groups/message", {
-      groupId,
-      message,
-    })
+  sendGroupMessage: async (
+    groupId: string,
+    message?: string,
+    file?: File,
+  ): Promise<ApiResponse<{ message: GroupMessage }>> => {
+    const formData = new FormData()
+    formData.append("groupId", groupId)
+    if (message) {
+      formData.append("message", message)
+    }
+    if (file) {
+      formData.append("attachment", file)
+    }
+
+    const response: AxiosResponse<ApiResponse<{ message: GroupMessage }>> = await api.post(
+      "/groups/message",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    )
     return response.data
   },
 

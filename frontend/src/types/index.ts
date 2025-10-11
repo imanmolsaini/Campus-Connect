@@ -362,6 +362,10 @@ export interface Message {
   sender_id: string
   receiver_id: string
   message: string
+  attachment_path?: string
+  attachment_name?: string
+  attachment_size?: number
+  attachment_type?: string
   is_read: boolean
   sender_name?: string
   created_at: string
@@ -372,6 +376,10 @@ export interface GroupMessage {
   sender_id: string
   group_id: string
   message: string
+  attachment_path?: string
+  attachment_name?: string
+  attachment_size?: number
+  attachment_type?: string
   is_group_message: boolean
   is_read: boolean
   sender_name?: string
