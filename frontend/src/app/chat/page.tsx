@@ -23,6 +23,11 @@ import {
   Trash2,
   LogOut,
   MoreVertical,
+  Paperclip,
+  Download,
+  FileText,
+  ImageIcon,
+  File,
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -35,6 +40,8 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [groupMessages, setGroupMessages] = useState<GroupMessage[]>([])
   const [newMessage, setNewMessage] = useState("")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
   const [showFriendRequests, setShowFriendRequests] = useState(false)
   const [showAddFriend, setShowAddFriend] = useState(false)
@@ -165,14 +172,18 @@ export default function ChatPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim()) return
+    if (!newMessage.trim() && !selectedFile) return
 
     if (selectedFriend) {
       setLoading(true)
       try {
-        const response = await chatAPI.sendMessage(selectedFriend.friend_id, newMessage)
+        const response = await chatAPI.sendMessage(selectedFriend.friend_id, newMessage, selectedFile || undefined)
         if (response.success) {
           setNewMessage("")
+          setSelectedFile(null)
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ""
+          }
           loadMessages(selectedFriend.friend_id)
           loadConversations()
         }
@@ -184,9 +195,13 @@ export default function ChatPage() {
     } else if (selectedGroup) {
       setLoading(true)
       try {
-        const response = await groupChatAPI.sendGroupMessage(selectedGroup.id, newMessage)
+        const response = await groupChatAPI.sendGroupMessage(selectedGroup.id, newMessage, selectedFile || undefined)
         if (response.success) {
           setNewMessage("")
+          setSelectedFile(null)
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ""
+          }
           loadGroupMessages(selectedGroup.id)
           loadGroups()
         }
@@ -333,6 +348,50 @@ export default function ChatPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to reject request")
     }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Check file size (10MB limit)
+      if (file.size > 10485760) {
+        toast.error("File size must be less than 10MB")
+        e.target.value = ""
+        return
+      }
+      setSelectedFile(file)
+      toast.success(`File selected: ${file.name}`)
+    }
+  }
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const handleDownloadAttachment = async (messageId: string) => {
+    try {
+      await chatAPI.downloadAttachment(messageId)
+      toast.success("Download started")
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to download attachment")
+    }
+  }
+
+  const getFileIcon = (mimeType?: string) => {
+    if (!mimeType) return <File className="w-4 h-4" />
+    if (mimeType.startsWith("image/")) return <ImageIcon className="w-4 h-4" />
+    if (mimeType.includes("pdf") || mimeType.includes("document")) return <FileText className="w-4 h-4" />
+    return <File className="w-4 h-4" />
+  }
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return ""
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / 1048576).toFixed(1)} MB`
   }
 
   const filteredConversations = conversations.filter((conv) =>
@@ -924,7 +983,28 @@ export default function ChatPage() {
                                   : "bg-white text-gray-900 border-2 border-gray-200"
                               }`}
                             >
-                              <p className="break-words leading-relaxed">{msg.message}</p>
+                              {msg.message && <p className="break-words leading-relaxed">{msg.message}</p>}
+                              {msg.attachment_path && (
+                                <div
+                                  className={`mt-2 flex items-center gap-2 p-2 rounded-lg ${
+                                    msg.sender_id === user?.id ? "bg-blue-400/30" : "bg-gray-100"
+                                  }`}
+                                >
+                                  {getFileIcon(msg.attachment_type)}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{msg.attachment_name}</p>
+                                    <p className="text-xs opacity-75">{formatFileSize(msg.attachment_size)}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleDownloadAttachment(msg.id)}
+                                    className={`p-1 rounded hover:bg-opacity-20 ${
+                                      msg.sender_id === user?.id ? "hover:bg-white" : "hover:bg-gray-300"
+                                    }`}
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
                               <p
                                 className={`text-xs mt-2 font-medium ${
                                   msg.sender_id === user?.id ? "text-blue-100" : "text-gray-500"
@@ -951,7 +1031,28 @@ export default function ChatPage() {
                               {msg.sender_id !== user?.id && (
                                 <p className="text-xs font-bold mb-1 text-green-600">{msg.sender_name}</p>
                               )}
-                              <p className="break-words leading-relaxed">{msg.message}</p>
+                              {msg.message && <p className="break-words leading-relaxed">{msg.message}</p>}
+                              {msg.attachment_path && (
+                                <div
+                                  className={`mt-2 flex items-center gap-2 p-2 rounded-lg ${
+                                    msg.sender_id === user?.id ? "bg-green-400/30" : "bg-gray-100"
+                                  }`}
+                                >
+                                  {getFileIcon(msg.attachment_type)}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{msg.attachment_name}</p>
+                                    <p className="text-xs opacity-75">{formatFileSize(msg.attachment_size)}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleDownloadAttachment(msg.id)}
+                                    className={`p-1 rounded hover:bg-opacity-20 ${
+                                      msg.sender_id === user?.id ? "hover:bg-white" : "hover:bg-gray-300"
+                                    }`}
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
                               <p
                                 className={`text-xs mt-2 font-medium ${
                                   msg.sender_id === user?.id ? "text-green-100" : "text-gray-500"
@@ -968,7 +1069,34 @@ export default function ChatPage() {
                 </div>
 
                 <div className="border-t-2 border-gray-200 p-4 bg-white">
+                  {selectedFile && (
+                    <div className="mb-3 flex items-center gap-2 p-2 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                      {getFileIcon(selectedFile.type)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
+                        <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                      </div>
+                      <button onClick={handleRemoveFile} className="p-1 hover:bg-red-100 rounded transition-colors">
+                        <X className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  )}
                   <form onSubmit={handleSendMessage} className="flex gap-3">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv,.jpg,.jpeg,.png,.gif,.webp,.zip,.rar,.7z,.mp3,.mp4,.avi,.mov,.wmv"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-gray-300 hover:bg-gray-50"
+                    >
+                      <Paperclip className="w-5 h-5" />
+                    </Button>
                     <Input
                       type="text"
                       value={newMessage}
@@ -978,7 +1106,7 @@ export default function ChatPage() {
                     />
                     <Button
                       type="submit"
-                      disabled={loading || !newMessage.trim()}
+                      disabled={loading || (!newMessage.trim() && !selectedFile)}
                       className={`shadow-md hover:shadow-lg transition-all px-6 ${
                         selectedGroup
                           ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
